@@ -20,6 +20,9 @@ const CFG = {
   inertia     : 0.14,   // 0..1 — «догоняние» скролла (эффект инерции/магнита)
   velBoost    : 0.55,   // насколько сильнее тянет при быстром скролле
   idleDelay   : 420,    // мс без скролла, после которых круг начинает выравниваться
+  hoverSigma  : 18,     // ширина зоны магнита под курсором, градусы
+  hoverLen    : 34,     // насколько вытягиваются деления под курсором
+  hoverBand   : 0.16,   // полоса вокруг кольца (в долях ширины круга), где курсор ловится
   attack      : 0.18,   // скорость появления магнита при начале движения
   release     : 0.028,  // скорость затухания магнита в покое (≈2 c до ровного круга)
   stops       : [0.00, 0.38, 0.72, 1.00],           // позиции градиента нагрева
@@ -32,8 +35,9 @@ const stage   = document.getElementById('stage');
 const ticksG  = document.getElementById('ticks');
 const hotG    = document.getElementById('ticksHot');
 const auraEl  = document.getElementById('aura');
+const auraHov = document.getElementById('auraHover');
+const ring    = document.getElementById('dial');
 const slides  = Array.from(document.querySelectorAll('.slide'));
-const dots    = Array.from(document.querySelectorAll('.dots i'));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const root    = document.documentElement;
 
@@ -114,12 +118,15 @@ function makeLine(parent){
 (function drawAura(){
   const r = CFG.radius - 6, a = CFG.auraSpread;
   const p0 = polar(-a, r), p1 = polar(a, r);
-  auraEl.setAttribute('d', `M ${p0.x} ${p0.y} A ${r} ${r} 0 0 1 ${p1.x} ${p1.y}`);
+  const d = `M ${p0.x} ${p0.y} A ${r} ${r} 0 0 1 ${p1.x} ${p1.y}`;
+  auraEl.setAttribute('d', d);
+  auraHov.setAttribute('d', d);   // та же дуга, скрипт поворачивает её под курсор
 })();
 
 /* ─── состояние анимации ─── */
 let progress = 0, rot = 0, rotTarget = 0, vel = 0;
 let energy = 0, lastInput = -Infinity, ticking = false;
+let hoverAngle = 0, hoverW = 0, hoverTarget = 0;
 
 function polar(angleDeg, r){
   const a = (angleDeg - 90) * DEG;          // 0° = 12 часов
@@ -164,9 +171,17 @@ function renderTicks(){
     // магнит работает только пока круг движется, в покое остаётся одна стрелка на 12 часах
     const mag  = Math.exp(-((a / sigma) ** 2)) * pull * energy;
     const rest = Math.exp(-((a / CFG.restSigma) ** 2)) * calm;
-    const w    = clamp(Math.max(mag, rest), 0, 1);
 
-    const len = CFG.lenBase + (CFG.lenMax - CFG.lenBase) * clamp(mag, 0, 1.3) + CFG.lenRest * rest;
+    // тот же магнит, но под курсором: тянет и подсвечивает там, где ведут мышкой
+    let dh = (a - hoverAngle) % 360;
+    if (dh > 180) dh -= 360;
+    if (dh < -180) dh += 360;
+    const hov = Math.exp(-((dh / CFG.hoverSigma) ** 2)) * hoverW;
+
+    const w = clamp(Math.max(mag, rest, hov), 0, 1);
+
+    const len = CFG.lenBase + (CFG.lenMax - CFG.lenBase) * clamp(mag, 0, 1.3)
+              + CFG.lenRest * rest + CFG.hoverLen * hov;
     const wid = CFG.widthBase + (CFG.widthMax - CFG.widthBase) * w;
 
     // базовая часть деления висит на окружности, а прирост от магнита
@@ -200,13 +215,14 @@ function renderTicks(){
   }
 
   auraEl.setAttribute('opacity', (0.42 * energy).toFixed(3));
+  auraHov.setAttribute('opacity', (0.42 * hoverW).toFixed(3));
+  auraHov.setAttribute('transform', `rotate(${hoverAngle.toFixed(1)} ${CX} ${CY})`);
 }
 
 /* ─── смена текстовых блоков ───
    HOLD + FADE = половина расстояния между блоками, поэтому уходящий текст
    успевает погаснуть до появления следующего: никакой «каши» из двух слоёв. */
 function renderSlides(p){
-  let active = 0, best = -1;
   for (let i = 0; i < N; i++){
     const center = N === 1 ? 0.5 : i * GAP;
     const d = p - center;
@@ -218,10 +234,7 @@ function renderSlides(p){
     el.style.transform = `translate3d(0, ${(-Math.sign(d) * (1 - o) * 34).toFixed(1)}px, 0) scale(${(0.94 + 0.06 * o).toFixed(3)})`;
     el.style.visibility    = o < 0.005 ? 'hidden' : 'visible';
     el.style.pointerEvents = o > 0.6 ? 'auto' : 'none';
-
-    if (t > best){ best = t; active = i; }
   }
-  dots.forEach((d, i) => d.classList.toggle('is-on', i === active));
 }
 
 /* ─── главный цикл ─── */
@@ -238,6 +251,7 @@ function loop(){
 
   const want = idle ? 0 : 1;
   energy += (want - energy) * (want > energy ? CFG.attack : CFG.release);
+  hoverW += (hoverTarget - hoverW) * (hoverTarget > hoverW ? 0.22 : 0.08);
 
   accent = accentAt(progress);
   updateRamp();
@@ -247,23 +261,41 @@ function loop(){
   renderSlides(progress);
 
   // крутимся, пока круг догоняет скролл и пока не улеглась «магнитная» энергия
-  if (!idle || Math.abs(rotTarget - rot) > 0.01 || Math.abs(vel) > 0.01 || energy > 0.002){
+  if (!idle || Math.abs(rotTarget - rot) > 0.01 || Math.abs(vel) > 0.01
+      || energy > 0.002 || hoverW > 0.002 || hoverTarget > 0){
     requestAnimationFrame(loop);
   } else {
-    rot = rotTarget; vel = 0; energy = 0;
+    rot = rotTarget; vel = 0; energy = 0; hoverW = 0;
     renderTicks();
     ticking = false;
   }
 }
+function wake(){
+  if (!ticking){ ticking = true; requestAnimationFrame(loop); }
+}
 function kick(){
   progress  = sceneProgress();
-  lastInput = performance.now();
-  if (!ticking){ ticking = true; requestAnimationFrame(loop); }
+  lastInput = performance.now();   // ховер сюда не пишет, иначе круг не считался бы отдыхающим
+  wake();
 }
 function repaint(){ readPalette(); renderTicks(); }
 
 addEventListener('scroll', kick, { passive:true });
 addEventListener('resize', kick);
+
+ring.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') return;            // на тачскрине это был бы просто скролл
+  const r  = ring.getBoundingClientRect();
+  const dx = e.clientX - (r.left + r.width / 2);
+  const dy = e.clientY - (r.top  + r.height / 2);
+  const dist   = Math.hypot(dx, dy);
+  const ringPx = r.width / 2 * (CFG.radius / CX);   // радиус кольца в пикселях экрана
+  const band   = r.width * CFG.hoverBand;           // насколько далеко от кольца ещё ловим курсор
+  hoverTarget = clamp(1 - Math.abs(dist - ringPx) / band, 0, 1);
+  if (hoverTarget > 0) hoverAngle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+  wake();
+}, { passive:true });
+ring.addEventListener('pointerleave', () => { hoverTarget = 0; wake(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repaint);
 new MutationObserver(repaint).observe(root, { attributes:true, attributeFilter:['data-theme'] });
 

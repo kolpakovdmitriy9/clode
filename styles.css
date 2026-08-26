@@ -82,7 +82,7 @@ body{
 
 .dial{
   position:relative;
-  width:min(86vmin,720px);
+  width:min(90vmin,952px);
   aspect-ratio:1/1;
   display:grid;place-items:center;
 }
@@ -95,7 +95,7 @@ body{
 /* ───────────── контент внутри круга ───────────── */
 .slides{
   position:relative;
-  width:min(72%,470px);
+  width:min(64%,560px);
   display:grid;
   place-items:center;
 }
@@ -124,27 +124,15 @@ body{
   font-size:clamp(13px,1.4vw,16px);line-height:1.45;font-weight:500;
 }
 
-/* ───────────── индикатор шагов ───────────── */
-.dots{
-  position:absolute;left:50%;bottom:-2%;transform:translateX(-50%);
-  display:flex;gap:8px;
-}
-.dots i{
-  width:6px;height:6px;border-radius:50%;background:var(--hair);
-  transition:background .35s ease,width .35s ease,border-radius .35s ease;
-}
-.dots i.is-on{width:20px;border-radius:4px;background:var(--accent)}
-
 @media (max-width:640px){
-  .dial{width:88vmin}
-  .slides{width:68%}
+  .dial{width:92vmin}
+  .slides{width:70%}
   .slide{gap:11px}
   .slide h2{font-size:clamp(19px,5.2vw,25px)}
   .slide p{font-size:clamp(12px,3.2vw,14px)}
   .badge{font-size:13px;padding:6px 12px 6px 9px}
   /* на узких экранах верстаем текст потоком, а не по авторским строкам */
   .slide h2 br,.slide p br{display:none}
-  .dots{bottom:-8%}
 }
 
 @media (prefers-reduced-motion:reduce){
