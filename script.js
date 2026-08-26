@@ -9,10 +9,12 @@ const CFG = {
   radius      : 270,    // внешняя окружность (viewBox 560×560): она всегда неподвижна
   lenBase     : 16,     // длина обычного деления (растёт внутрь круга)
   lenMax      : 56,     // длина деления в самой «горячей» точке (12 часов)
+  lenRest     : 22,     // добавка к одинокой стрелке на 12 часах, когда скролл остановлен
   growOut     : 0.5,    // куда уходит прирост: 0 — только внутрь, 1 — только наружу, 0.5 — поровну
   widthBase   : 1.05,   // толщина обычного деления
   widthMax    : 2.6,    // толщина в верхней точке
   sigma       : 26,     // ширина зоны магнита в градусах (гауссов спад)
+  restSigma   : 2.6,    // ширина зоны стрелки покоя — попадает ровно одно деление
   rotationTotal: 320,   // на сколько градусов провернётся круг за всю сцену
   preSpin     : 16,     // градусов лёгкой подкрутки, пока блок подъезжает снизу
   scaleFar    : 1,      // масштаб круга, пока блок ещё далеко
@@ -127,6 +129,7 @@ let progress = 0, approach = 0, dialScale = CFG.scaleFar;
 let rot = 0, rotTarget = 0, vel = 0;
 let energy = 0, lastInput = -Infinity, ticking = false;
 let hoverAngle = 0, hoverW = 0, hoverTarget = 0;
+let gate = 0;   // 0 — блок ещё подъезжает и полностью серый, 1 — сцена прилипла
 
 function polar(angleDeg, r){
   const a = (angleDeg - 90) * DEG;          // 0° = 12 часов
@@ -168,8 +171,7 @@ function renderTicks(){
   const speed = Math.min(Math.abs(vel) / 6, 1);            // 0..1 — как быстро крутим
   const sigma = CFG.sigma * (1 + speed * 0.45);            // на скорости зона шире
   const pull  = 1 + speed * CFG.velBoost;                  // и тянет сильнее
-  // пока блок подъезжает, магнит выключен: деления одинаковые и серые
-  const gate  = smooth(clamp((approach - 0.7) / 0.3, 0, 1));
+  const calm  = 1 - energy;                                // 1 — скролл остановлен
 
   for (let i = 0; i < CFG.tickCount; i++){
     // угол деления с учётом поворота, приведённый к -180..180 (0 = верх)
@@ -179,6 +181,8 @@ function renderTicks(){
 
     // магнит работает только пока круг движется и только когда блок уже прилип
     const mag = Math.exp(-((a / sigma) ** 2)) * pull * energy * gate;
+    // когда скролл остановлен, из всего кольца активной остаётся одна стрелка на 12 часах
+    const rest = Math.exp(-((a / CFG.restSigma) ** 2)) * calm * gate;
 
     // тот же магнит, но под курсором: тянет и подсвечивает там, где ведут мышкой
     let dh = (a - hoverAngle) % 360;
@@ -186,10 +190,10 @@ function renderTicks(){
     if (dh < -180) dh += 360;
     const hov = Math.exp(-((dh / CFG.hoverSigma) ** 2)) * hoverW;
 
-    const w = clamp(Math.max(mag, hov), 0, 1);
+    const w = clamp(Math.max(mag, rest, hov), 0, 1);
 
     const len = CFG.lenBase + (CFG.lenMax - CFG.lenBase) * clamp(mag, 0, 1.3)
-              + CFG.hoverLen * hov;
+              + CFG.lenRest * rest + CFG.hoverLen * hov;
     const wid = CFG.widthBase + (CFG.widthMax - CFG.widthBase) * w;
 
     // базовая часть деления висит на окружности, а прирост от магнита
@@ -236,9 +240,12 @@ function loop(){
   const idle = performance.now() - lastInput > CFG.idleDelay;
 
   const near = nearness();
+  gate = smooth(clamp((approach - 0.7) / 0.3, 0, 1));
 
   // к повороту по скроллу добавлена лёгкая подкрутка на подходе к блоку
-  rotTarget = progress * CFG.rotationTotal - CFG.preSpin * (1 - near);
+  const raw = progress * CFG.rotationTotal - CFG.preSpin * (1 - near);
+  // в покое круг доводится до ближайшего деления, чтобы стрелка встала ровно на 12 часов
+  rotTarget = (idle && gate > 0.99) ? Math.round(raw / STEP) * STEP : raw;
 
   // и круг ужимается по мере приближения
   dialScale = CFG.scaleFar + (CFG.scaleNear - CFG.scaleFar) * near;
@@ -301,12 +308,15 @@ new MutationObserver(repaint).observe(root, { attributes:true, attributeFilter:[
 
 progress = sceneProgress();
 approach = sceneApproach();
+gate = smooth(clamp((approach - 0.7) / 0.3, 0, 1));
 readPalette();
 accent = accentAt(progress);
 updateRamp();
 root.style.setProperty('--accent', rgb(accent));
 dialScale = CFG.scaleFar + (CFG.scaleNear - CFG.scaleFar) * nearness();
 svgEl.style.transform = `scale(${dialScale.toFixed(4)})`;
-rot = rotTarget = progress * CFG.rotationTotal - CFG.preSpin * (1 - nearness());
+const raw0 = progress * CFG.rotationTotal - CFG.preSpin * (1 - nearness());
+// страница может открыться уже внутри сцены — сразу доводим стрелку на 12 часов
+rot = rotTarget = gate > 0.99 ? Math.round(raw0 / STEP) * STEP : raw0;
 renderTicks();
 renderSlides(progress);
