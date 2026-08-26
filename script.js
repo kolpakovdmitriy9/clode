@@ -10,6 +10,7 @@ const CFG = {
   lenBase     : 16,     // длина обычного деления (растёт внутрь круга)
   lenMax      : 56,     // длина деления в самой «горячей» точке (12 часов)
   lenRest     : 22,     // длина одинокой стрелки на 12 часах в состоянии покоя
+  growOut     : 0.5,    // куда уходит прирост: 0 — только внутрь, 1 — только наружу, 0.5 — поровну
   widthBase   : 1.05,   // толщина обычного деления
   widthMax    : 2.6,    // толщина в верхней точке
   sigma       : 26,     // ширина зоны магнита в градусах (гауссов спад)
@@ -111,7 +112,7 @@ function makeLine(parent){
 
 /* ─── дуга мягкой подсветки: тоже внутри окружности ─── */
 (function drawAura(){
-  const r = CFG.radius - 26, a = CFG.auraSpread;
+  const r = CFG.radius - 6, a = CFG.auraSpread;
   const p0 = polar(-a, r), p1 = polar(a, r);
   auraEl.setAttribute('d', `M ${p0.x} ${p0.y} A ${r} ${r} 0 0 1 ${p1.x} ${p1.y}`);
 })();
@@ -168,9 +169,11 @@ function renderTicks(){
     const len = CFG.lenBase + (CFG.lenMax - CFG.lenBase) * clamp(mag, 0, 1.3) + CFG.lenRest * rest;
     const wid = CFG.widthBase + (CFG.widthMax - CFG.widthBase) * w;
 
-    // деления растут внутрь: внешний конец всегда на окружности
-    const outer = polar(a, CFG.radius);
-    const inner = polar(a, CFG.radius - len);
+    // базовая часть деления висит на окружности, а прирост от магнита
+    // расходится в обе стороны в пропорции growOut
+    const grow  = len - CFG.lenBase;
+    const outer = polar(a, CFG.radius + grow * CFG.growOut);
+    const inner = polar(a, CFG.radius - CFG.lenBase - grow * (1 - CFG.growOut));
 
     const l = base[i];
     l.setAttribute('x1', outer.x.toFixed(2));
