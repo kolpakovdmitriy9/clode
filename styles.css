@@ -149,6 +149,16 @@ body{
   .slide h2 br,.slide p br{display:none}
 }
 
+/* Мобильный круг: не сжимаем его под ширину экрана — пусть уходит за края,
+   а текст держит свою ширину независимо от диаметра кольца. Центрируем через
+   absolute, а не place-items:center: когда элемент шире контейнера с
+   overflow:hidden, грид по умолчанию откатывается на 'safe center'
+   (по факту прижимает к левому краю), чтобы не терять контент при скролле. */
+@media (max-width:480px){
+  .dial{width:150vmin;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+  .slides{width:min(80vw,340px)}
+}
+
 @media (prefers-reduced-motion:reduce){
   .mouse span{animation:none}
 }
