@@ -2,14 +2,54 @@
   --bg:#ffffff;
   --ink:#0d0d0f;
   --muted:#6b6b73;
-  --accent:#ff4d1f;          /* цвет «нагретых» делений — меняется одной строкой */
+  --hair:#c8c8cf;
   --badge-bg:#e9e9ec;
-  --slides:3;                /* кол-во смысловых блоков внутри круга */
-  --stage-vh:120;            /* высота скролла на один блок, в vh */
+  --badge-ink:#3a3a42;
+  /* градиент «нагрева» деления: холодное → среднее → горячее → акцент блока */
+  --tick-cold:#ceced4;
+  --tick-mid:#8c8c94;
+  --tick-hot:#202026;
+  /* акцент каждого текстового блока: --c1 для первого, --c2 для второго и т.д. */
+  --c1:#ff4a22;
+  --c2:#12b76a;
+  --c3:#2e6bf5;
+  --accent:var(--c1);          /* текущий акцент, скрипт переписывает его по скроллу */
+  --slides:3;                  /* количество блоков — должно совпадать с числом .slide */
+  --stage-vh:120;              /* сколько vh скролла приходится на один блок */
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b0b0d;
+    --ink:#f3f3f6;
+    --muted:#93939e;
+    --hair:#3a3a44;
+    --badge-bg:#1d1d23;
+    --badge-ink:#c9c9d2;
+    --tick-cold:#2f2f38;
+    --tick-mid:#6e6e7a;
+    --tick-hot:#ededf2;
+    --c1:#ff6a45;
+    --c2:#2fd48a;
+    --c3:#5a8cff;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b0b0d;
+  --ink:#f3f3f6;
+  --muted:#93939e;
+  --hair:#3a3a44;
+  --badge-bg:#1d1d23;
+  --badge-ink:#c9c9d2;
+  --tick-cold:#2f2f38;
+  --tick-mid:#6e6e7a;
+  --tick-hot:#ededf2;
+  --c1:#ff6a45;
+  --c2:#2fd48a;
+  --c3:#5a8cff;
 }
 
 *{box-sizing:border-box}
-html{scroll-behavior:auto}
 body{
   margin:0;
   background:var(--bg);
@@ -24,12 +64,12 @@ body{
   align-items:center;justify-content:center;text-align:center;padding:40px 24px;gap:14px;
 }
 .outro{min-height:70vh}
-.kicker{margin:0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.intro h1{margin:0;font-size:clamp(32px,6vw,64px);letter-spacing:-.03em;font-weight:700}
-.intro .sub,.outro p{margin:0;max-width:520px;color:var(--muted);font-size:clamp(14px,1.6vw,17px);line-height:1.5}
+.kicker{margin:0;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.intro h1{margin:0;font-size:clamp(32px,6vw,64px);letter-spacing:-.03em;font-weight:700;text-wrap:balance}
+.intro .sub,.outro p{margin:0;max-width:52ch;color:var(--muted);font-size:clamp(14px,1.6vw,17px);line-height:1.5}
 .outro h2{margin:0;font-size:clamp(24px,4vw,40px);letter-spacing:-.02em}
-.mouse{margin-top:18px;width:26px;height:42px;border:1.5px solid #c8c8cf;border-radius:14px;position:relative}
-.mouse span{position:absolute;left:50%;top:8px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:#b3b3bb;animation:wheel 1.6s ease-in-out infinite}
+.mouse{margin-top:18px;width:26px;height:42px;border:1.5px solid var(--hair);border-radius:14px;position:relative}
+.mouse span{position:absolute;left:50%;top:8px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:var(--muted);animation:wheel 1.6s ease-in-out infinite}
 @keyframes wheel{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(14px);opacity:0}}
 
 /* ───────────── сцена со sticky-кругом ───────────── */
@@ -49,12 +89,13 @@ body{
 .dial__svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 
 .ticks line{stroke-linecap:round}
-.aura{stroke-width:24;opacity:.42}
+/* прозрачностью дуги управляет скрипт — в CSS её задавать нельзя, стиль перебьёт атрибут */
+.aura{stroke-width:24}
 
 /* ───────────── контент внутри круга ───────────── */
 .slides{
   position:relative;
-  width:min(78%,520px);
+  width:min(72%,470px);
   display:grid;
   place-items:center;
 }
@@ -69,18 +110,18 @@ body{
 .badge{
   display:inline-flex;align-items:center;gap:7px;
   padding:7px 14px 7px 11px;border-radius:999px;
-  background:var(--badge-bg);color:#3a3a42;
+  background:var(--badge-bg);color:var(--badge-ink);
   font-size:15px;font-weight:600;letter-spacing:.01em;
-  transition:background .4s ease,color .4s ease;
+  font-variant-numeric:tabular-nums;
 }
 .badge__i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .slide h2{
-  margin:0;font-size:clamp(22px,3.4vw,40px);line-height:1.12;
-  letter-spacing:-.035em;font-weight:700;
+  margin:0;font-size:clamp(22px,3.2vw,38px);line-height:1.12;
+  letter-spacing:-.035em;font-weight:700;text-wrap:balance;
 }
 .slide p{
   margin:0;color:var(--muted);
-  font-size:clamp(13px,1.5vw,17px);line-height:1.45;font-weight:500;
+  font-size:clamp(13px,1.4vw,16px);line-height:1.45;font-weight:500;
 }
 
 /* ───────────── индикатор шагов ───────────── */
@@ -89,17 +130,17 @@ body{
   display:flex;gap:8px;
 }
 .dots i{
-  width:6px;height:6px;border-radius:50%;background:#d4d4da;
-  transition:background .35s ease,transform .35s ease,width .35s ease;
+  width:6px;height:6px;border-radius:50%;background:var(--hair);
+  transition:background .35s ease,width .35s ease,border-radius .35s ease;
 }
 .dots i.is-on{width:20px;border-radius:4px;background:var(--accent)}
 
 @media (max-width:640px){
   .dial{width:88vmin}
-  .slides{width:72%}
+  .slides{width:68%}
   .slide{gap:11px}
-  .slide h2{font-size:clamp(20px,5.6vw,26px)}
-  .slide p{font-size:clamp(12px,3.4vw,15px)}
+  .slide h2{font-size:clamp(19px,5.2vw,25px)}
+  .slide p{font-size:clamp(12px,3.2vw,14px)}
   .badge{font-size:13px;padding:6px 12px 6px 9px}
   /* на узких экранах верстаем текст потоком, а не по авторским строкам */
   .slide h2 br,.slide p br{display:none}
