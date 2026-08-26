@@ -19,6 +19,12 @@
   --book:350;                  /* Book — облегчённое начертание, им набрано описание */
   --regular:400;               /* Regular — им набраны заголовок и число */
   --tracking:-.02em;
+  /* размеры сняты с макета при круге 952 и выражены в vmin, чтобы расти вместе с кольцом */
+  --icon:clamp(56px,8.6vmin,96px);
+  --num:clamp(44px,8.06vmin,90px);
+  --h:clamp(22px,4.3vmin,48px);
+  --p:clamp(14px,2.15vmin,24px);
+  --gap:clamp(16px,2.87vmin,32px);
   --slides:3;                  /* количество блоков — должно совпадать с числом .slide */
   --stage-vh:120;              /* сколько vh скролла приходится на один блок */
 }
@@ -100,41 +106,45 @@ body{
 /* ───────────── контент внутри круга ───────────── */
 .slides{
   position:relative;
-  width:min(60%,560px);
+  width:min(58%,617px);
   display:grid;
   place-items:center;
 }
 .slide{
   grid-area:1/1;
   text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:14px;
+  display:flex;flex-direction:column;align-items:center;gap:var(--gap);
   opacity:0;
   will-change:opacity,transform;
   pointer-events:none;
 }
-.badge{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:7px 14px 7px 11px;border-radius:999px;
-  background:var(--badge-bg);color:var(--badge-ink);
-  font-size:15px;font-weight:var(--regular);letter-spacing:var(--tracking);
-  font-variant-numeric:tabular-nums;
+.mark,.copy{display:flex;flex-direction:column;align-items:center;gap:var(--gap)}
+.copy{width:100%}
+.icon{
+  width:var(--icon);height:var(--icon);flex:none;
+  border:1px solid var(--accent);border-radius:50%;
+  display:grid;place-items:center;color:var(--accent);
 }
-.badge__i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* иконка у каждого блока своя: по умолчанию заливка,
+   обводочному глифу достаточно своих fill и stroke в атрибутах */
+.icon svg{width:38%;height:38%}
+.icon svg:not([fill]){fill:currentColor}
+/* число набрано Regular без трекинга — в макете межбуквенное задано только тексту */
+.count{
+  color:var(--accent);font-size:var(--num);font-weight:var(--regular);
+  line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
 .slide h2{
-  margin:0;font-size:clamp(22px,3.2vw,38px);line-height:1.12;
+  margin:0;font-size:var(--h);line-height:1;
   letter-spacing:var(--tracking);font-weight:var(--regular);text-wrap:balance;
 }
 .slide p{
-  margin:0;color:var(--muted);
-  font-size:clamp(13px,1.4vw,16px);line-height:1.45;font-weight:var(--book);letter-spacing:var(--tracking);
+  margin:0;color:var(--ink);
+  font-size:var(--p);line-height:1.2;font-weight:var(--book);letter-spacing:var(--tracking);
 }
 
 @media (max-width:640px){
   .slides{width:64%}
-  .slide{gap:11px}
-  .slide h2{font-size:clamp(19px,5.2vw,25px)}
-  .slide p{font-size:clamp(12px,3.2vw,14px)}
-  .badge{font-size:13px;padding:6px 12px 6px 9px}
   /* на узких экранах верстаем текст потоком, а не по авторским строкам */
   .slide h2 br,.slide p br{display:none}
 }
