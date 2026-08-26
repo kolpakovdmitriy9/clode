@@ -33,10 +33,6 @@
           <filter id="auraBlur" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="9"></feGaussianBlur>
           </filter>
-          <filter id="hotGlow" x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="2.4" result="b"></feGaussianBlur>
-            <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-          </filter>
         </defs>
 
         <!-- мягкая подсветка верхней зоны -->
@@ -47,7 +43,6 @@
 
         <!-- деления генерируются скриптом -->
         <g id="ticks" class="ticks"></g>
-        <g id="ticksHot" class="ticks ticks--hot" filter="url(#hotGlow)"></g>
       </svg>
 
       <!-- контент внутри круга -->

@@ -82,20 +82,20 @@ body{
 
 .dial{
   position:relative;
-  width:min(90vmin,952px);
+  width:min(96vmin,1040px);
   aspect-ratio:1/1;
   display:grid;place-items:center;
 }
-.dial__svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.dial__svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;will-change:transform}
 
-.ticks line{stroke-linecap:round}
+.ticks line{stroke-linecap:butt}
 /* прозрачностью дуги управляет скрипт — в CSS её задавать нельзя, стиль перебьёт атрибут */
 .aura{stroke-width:24}
 
 /* ───────────── контент внутри круга ───────────── */
 .slides{
   position:relative;
-  width:min(64%,560px);
+  width:min(60%,560px);
   display:grid;
   place-items:center;
 }
@@ -125,8 +125,7 @@ body{
 }
 
 @media (max-width:640px){
-  .dial{width:92vmin}
-  .slides{width:70%}
+  .slides{width:64%}
   .slide{gap:11px}
   .slide h2{font-size:clamp(19px,5.2vw,25px)}
   .slide p{font-size:clamp(12px,3.2vw,14px)}

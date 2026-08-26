@@ -6,16 +6,18 @@
 
 const CFG = {
   tickCount   : 72,     // количество делений по кругу
-  radius      : 208,    // внешняя окружность (viewBox 560×560): она всегда неподвижна
+  radius      : 270,    // внешняя окружность (viewBox 560×560): она всегда неподвижна
   lenBase     : 16,     // длина обычного деления (растёт внутрь круга)
   lenMax      : 56,     // длина деления в самой «горячей» точке (12 часов)
-  lenRest     : 22,     // длина одинокой стрелки на 12 часах в состоянии покоя
   growOut     : 0.5,    // куда уходит прирост: 0 — только внутрь, 1 — только наружу, 0.5 — поровну
   widthBase   : 1.05,   // толщина обычного деления
   widthMax    : 2.6,    // толщина в верхней точке
   sigma       : 26,     // ширина зоны магнита в градусах (гауссов спад)
-  restSigma   : 2.6,    // ширина зоны стрелки покоя — попадает ровно одно деление
   rotationTotal: 320,   // на сколько градусов провернётся круг за всю сцену
+  preSpin     : 16,     // градусов лёгкой подкрутки, пока блок подъезжает снизу
+  scaleFar    : 1,      // масштаб круга, пока блок ещё далеко
+  scaleNear   : 0.92,   // масштаб круга, когда блок прилип
+  scaleFrom   : 0.35,   // с какой доли подхода круг начинает ужиматься
   auraSpread  : 58,     // полуширина дуги подсветки, градусы
   inertia     : 0.14,   // 0..1 — «догоняние» скролла (эффект инерции/магнита)
   velBoost    : 0.55,   // насколько сильнее тянет при быстром скролле
@@ -33,10 +35,10 @@ const CX = 280, CY = 280, DEG = Math.PI / 180;
 
 const stage   = document.getElementById('stage');
 const ticksG  = document.getElementById('ticks');
-const hotG    = document.getElementById('ticksHot');
 const auraEl  = document.getElementById('aura');
 const auraHov = document.getElementById('auraHover');
 const ring    = document.getElementById('dial');
+const svgEl   = document.querySelector('.dial__svg');
 const slides  = Array.from(document.querySelectorAll('.slide'));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const root    = document.documentElement;
@@ -103,11 +105,8 @@ function accentAt(p){
 }
 
 /* ─── деления: базовый слой + слой свечения ─── */
-const base = [], hot = [];
-for (let i = 0; i < CFG.tickCount; i++){
-  base.push(makeLine(ticksG));
-  hot .push(makeLine(hotG));
-}
+const base = [];
+for (let i = 0; i < CFG.tickCount; i++) base.push(makeLine(ticksG));
 function makeLine(parent){
   const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   parent.appendChild(l);
@@ -124,7 +123,8 @@ function makeLine(parent){
 })();
 
 /* ─── состояние анимации ─── */
-let progress = 0, rot = 0, rotTarget = 0, vel = 0;
+let progress = 0, approach = 0, dialScale = CFG.scaleFar;
+let rot = 0, rotTarget = 0, vel = 0;
 let energy = 0, lastInput = -Infinity, ticking = false;
 let hoverAngle = 0, hoverW = 0, hoverTarget = 0;
 
@@ -143,6 +143,14 @@ function sceneProgress(){
   return clamp(-r.top / total, 0, 1);
 }
 
+/* подход к сцене: 0 — блок только показался снизу, 1 — прилип к верху экрана.
+   На этом отрезке круг подкручивается, ужимается и остаётся полностью серым. */
+function sceneApproach(){
+  const r = stage.getBoundingClientRect();
+  return clamp(1 - r.top / window.innerHeight, 0, 1);
+}
+const nearness = () => smooth(clamp((approach - CFG.scaleFrom) / (1 - CFG.scaleFrom), 0, 1));
+
 /* цвет деления по «нагреву» w (0..1) */
 function heat(w){
   const R = CFG.ramp;
@@ -160,7 +168,8 @@ function renderTicks(){
   const speed = Math.min(Math.abs(vel) / 6, 1);            // 0..1 — как быстро крутим
   const sigma = CFG.sigma * (1 + speed * 0.45);            // на скорости зона шире
   const pull  = 1 + speed * CFG.velBoost;                  // и тянет сильнее
-  const calm  = 1 - energy;                                // 1 — круг полностью в покое
+  // пока блок подъезжает, магнит выключен: деления одинаковые и серые
+  const gate  = smooth(clamp((approach - 0.7) / 0.3, 0, 1));
 
   for (let i = 0; i < CFG.tickCount; i++){
     // угол деления с учётом поворота, приведённый к -180..180 (0 = верх)
@@ -168,9 +177,8 @@ function renderTicks(){
     if (a > 180) a -= 360;
     if (a < -180) a += 360;
 
-    // магнит работает только пока круг движется, в покое остаётся одна стрелка на 12 часах
-    const mag  = Math.exp(-((a / sigma) ** 2)) * pull * energy;
-    const rest = Math.exp(-((a / CFG.restSigma) ** 2)) * calm;
+    // магнит работает только пока круг движется и только когда блок уже прилип
+    const mag = Math.exp(-((a / sigma) ** 2)) * pull * energy * gate;
 
     // тот же магнит, но под курсором: тянет и подсвечивает там, где ведут мышкой
     let dh = (a - hoverAngle) % 360;
@@ -178,10 +186,10 @@ function renderTicks(){
     if (dh < -180) dh += 360;
     const hov = Math.exp(-((dh / CFG.hoverSigma) ** 2)) * hoverW;
 
-    const w = clamp(Math.max(mag, rest, hov), 0, 1);
+    const w = clamp(Math.max(mag, hov), 0, 1);
 
     const len = CFG.lenBase + (CFG.lenMax - CFG.lenBase) * clamp(mag, 0, 1.3)
-              + CFG.lenRest * rest + CFG.hoverLen * hov;
+              + CFG.hoverLen * hov;
     const wid = CFG.widthBase + (CFG.widthMax - CFG.widthBase) * w;
 
     // базовая часть деления висит на окружности, а прирост от магнита
@@ -198,23 +206,9 @@ function renderTicks(){
     l.setAttribute('stroke', heat(w));
     l.setAttribute('stroke-width', wid.toFixed(2));
 
-    // слой свечения — только для самых «горячих»
-    const g = hot[i];
-    const glow = Math.max(0, (w - 0.55) / 0.45);
-    if (glow > 0.01){
-      g.setAttribute('x1', outer.x.toFixed(2));
-      g.setAttribute('y1', outer.y.toFixed(2));
-      g.setAttribute('x2', inner.x.toFixed(2));
-      g.setAttribute('y2', inner.y.toFixed(2));
-      g.setAttribute('stroke', rgb(accent));
-      g.setAttribute('stroke-width', (wid * 0.9).toFixed(2));
-      g.setAttribute('opacity', (glow * 0.55).toFixed(3));
-    } else if (g.getAttribute('opacity') !== '0'){
-      g.setAttribute('opacity', '0');
-    }
   }
 
-  auraEl.setAttribute('opacity', (0.42 * energy).toFixed(3));
+  auraEl.setAttribute('opacity', (0.42 * energy * gate).toFixed(3));
   auraHov.setAttribute('opacity', (0.42 * hoverW).toFixed(3));
   auraHov.setAttribute('transform', `rotate(${hoverAngle.toFixed(1)} ${CX} ${CY})`);
 }
@@ -241,9 +235,14 @@ function renderSlides(p){
 function loop(){
   const idle = performance.now() - lastInput > CFG.idleDelay;
 
-  // в покое круг доводится до ближайшего деления, чтобы стрелка встала ровно на 12 часов
-  const raw = progress * CFG.rotationTotal;
-  rotTarget = idle ? Math.round(raw / STEP) * STEP : raw;
+  const near = nearness();
+
+  // к повороту по скроллу добавлена лёгкая подкрутка на подходе к блоку
+  rotTarget = progress * CFG.rotationTotal - CFG.preSpin * (1 - near);
+
+  // и круг ужимается по мере приближения
+  dialScale = CFG.scaleFar + (CFG.scaleNear - CFG.scaleFar) * near;
+  svgEl.style.transform = `scale(${dialScale.toFixed(4)})`;
 
   const prev = rot;
   rot += (rotTarget - rot) * (reduced ? 1 : CFG.inertia);
@@ -275,6 +274,7 @@ function wake(){
 }
 function kick(){
   progress  = sceneProgress();
+  approach  = sceneApproach();
   lastInput = performance.now();   // ховер сюда не пишет, иначе круг не считался бы отдыхающим
   wake();
 }
@@ -289,7 +289,7 @@ ring.addEventListener('pointermove', e => {
   const dx = e.clientX - (r.left + r.width / 2);
   const dy = e.clientY - (r.top  + r.height / 2);
   const dist   = Math.hypot(dx, dy);
-  const ringPx = r.width / 2 * (CFG.radius / CX);   // радиус кольца в пикселях экрана
+  const ringPx = r.width / 2 * (CFG.radius / CX) * dialScale;   // радиус кольца в пикселях экрана
   const band   = r.width * CFG.hoverBand;           // насколько далеко от кольца ещё ловим курсор
   hoverTarget = clamp(1 - Math.abs(dist - ringPx) / band, 0, 1);
   if (hoverTarget > 0) hoverAngle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
@@ -300,10 +300,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repaint);
 new MutationObserver(repaint).observe(root, { attributes:true, attributeFilter:['data-theme'] });
 
 progress = sceneProgress();
+approach = sceneApproach();
 readPalette();
 accent = accentAt(progress);
 updateRamp();
 root.style.setProperty('--accent', rgb(accent));
-rot = rotTarget = Math.round(progress * CFG.rotationTotal / STEP) * STEP;
+dialScale = CFG.scaleFar + (CFG.scaleNear - CFG.scaleFar) * nearness();
+svgEl.style.transform = `scale(${dialScale.toFixed(4)})`;
+rot = rotTarget = progress * CFG.rotationTotal - CFG.preSpin * (1 - nearness());
 renderTicks();
 renderSlides(progress);
