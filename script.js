@@ -23,12 +23,13 @@ const CFG = {
   auraSpread  : 58,     // полуширина дуги подсветки, градусы
   inertia     : 0.14,   // 0..1 — «догоняние» скролла (эффект инерции/магнита)
   velBoost    : 0.55,   // насколько сильнее тянет при быстром скролле
-  idleDelay   : 420,    // мс без скролла, после которых круг начинает выравниваться
+  idleDelay   : 180,    // мс без скролла, после которых круг начинает выравниваться
   hoverSigma  : 18,     // ширина зоны магнита под курсором, градусы
   hoverLen    : 34,     // насколько вытягиваются деления под курсором
-  hoverBand   : 0.16,   // полоса вокруг кольца (в долях ширины круга), где курсор ловится
+  hoverBand   : 0.16,   // за пределами кольца магнит гаснет на этом расстоянии (в долях ширины круга)
+  hoverDead   : 0.35,   // мёртвая зона у самого центра (в долях радиуса) — там угол «дрожит»
   attack      : 0.18,   // скорость появления магнита при начале движения
-  release     : 0.028,  // скорость затухания магнита в покое (≈2 c до ровного круга)
+  release     : 0.08,   // скорость затухания магнита в покое (≈0.7 c до ровного круга)
   stops       : [0.00, 0.38, 0.72, 1.00],           // позиции градиента нагрева
   ramp        : []
 };
@@ -297,8 +298,11 @@ ring.addEventListener('pointermove', e => {
   const dy = e.clientY - (r.top  + r.height / 2);
   const dist   = Math.hypot(dx, dy);
   const ringPx = r.width / 2 * (CFG.radius / CX) * dialScale;   // радиус кольца в пикселях экрана
-  const band   = r.width * CFG.hoverBand;           // насколько далеко от кольца ещё ловим курсор
-  hoverTarget = clamp(1 - Math.abs(dist - ringPx) / band, 0, 1);
+  const band   = r.width * CFG.hoverBand;           // насколько далеко за кольцом магнит ещё виден
+  // магнит реагирует на направление курсора от центра, а не только на точный контур делений
+  const inner = clamp(dist / (ringPx * CFG.hoverDead), 0, 1);
+  const outer = 1 - clamp((dist - ringPx) / band, 0, 1);
+  hoverTarget = clamp(Math.min(inner, outer), 0, 1);
   if (hoverTarget > 0) hoverAngle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
   wake();
 }, { passive:true });
