@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JARCOS — design practice by João Ferreira</title>
+<meta name="description" content="Design-clone study of jarcos.work, built for front-end practice. Not affiliated with JARCOS / João Ferreira.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="cursor-none">
+
+<!-- ============ CUSTOM CURSOR ============ -->
+<div class="cursor hidden" id="cursor">
+  <div class="cursor__circle">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="cursor__button"><p>Go on, press it</p></div>
+</div>
+
+<!-- ============ STICKY PILL NAV ============ -->
+<nav class="pill-nav" id="pillNav" aria-label="Primary">
+  <div class="pill-nav__indicator" id="pillIndicator"></div>
+  <a href="#work" class="pill-nav__link" data-cursor="pointer">Work</a>
+  <a href="#grid" class="pill-nav__link" data-cursor="pointer">Grid</a>
+  <a href="#contact" class="pill-nav__link" data-cursor="pointer">Inquiries</a>
+</nav>
+
+<main id="main">
+
+  <!-- ============ SECTION 1: HERO ============ -->
+  <section class="hero" id="s1">
+    <div class="hero__top">
+      <div class="hero__intro">
+        <span class="hero__dot" aria-hidden="true"></span>
+        <h1 class="hero__headline">
+          <span class="reveal-letters" data-text="JARCOS is the design practice by João Ferreira"></span>
+          <span class="reveal-letters hero__gray" data-text="a brazilian multidisciplinary designer"></span>
+        </h1>
+        <p class="hero__headline hero__gray">
+          <span class="reveal-letters" data-text="working across brand and digital"></span>
+        </p>
+      </div>
+
+      <ul class="hero__nav" aria-label="Sections">
+        <li style="transition-delay:40ms"><a href="#work" data-cursor="pointer">Work</a></li>
+        <li style="transition-delay:80ms"><a href="#grid" data-cursor="pointer">Grid</a></li>
+        <li style="transition-delay:120ms"><a href="#contact" data-cursor="pointer">Inquiries</a></li>
+      </ul>
+
+      <div class="hero__gru">
+        <p class="hero__city">Guarulhos</p>
+        <p class="hero__clock" id="clock">--:--</p>
+      </div>
+    </div>
+
+    <div class="hero__arena" id="heroArena">
+      <figure class="floater" id="floater" data-cursor="press">
+        <div class="floater__art floater__art--1"></div>
+      </figure>
+    </div>
+
+    <h2 class="wordmark" id="wordmarkHero" data-cursor="press">JARCOS</h2>
+  </section>
+
+  <div class="spacer" aria-hidden="true"></div>
+
+  <!-- ============ SECTION 2: ABOUT ============ -->
+  <section class="panel panel--about" id="s2">
+
+    <div class="row row--intro reveal-block">
+      <div class="row__label">2012 — 26</div>
+      <div class="row__content">
+        <p class="row__heading">A design practice shaping brands and digital experiences. Driven by meaning, storytelling, and strategy. Working project by project, partnering with clients and studios worldwide, and expanding through trusted collaborators when needed.</p>
+        <a href="mailto:hi@jarcos.work?subject=Project%20inquiry" class="cta" data-cursor="pointer">
+          <span class="cta__fill" aria-hidden="true"></span>
+          <span class="cta__label">Pop up a message</span>
+          <span class="cta__arrows" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <div class="row row--bordered reveal-block">
+      <div class="row__label">Capabilities</div>
+      <div class="row__content row__content--split">
+        <ul class="row__list">
+          <li>Creative Direction</li><li>Art Direction</li><li>Digital Design</li><li>Branding</li><li>Identity Systems</li>
+        </ul>
+        <ul class="row__list">
+          <li>Motion Design</li><li>Brand Strategy</li><li>User Experience</li><li>Visual Storytelling</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row row--bordered reveal-block">
+      <div class="row__label">Selected Clients</div>
+      <div class="row__content row__content--split">
+        <ul class="row__list">
+          <li>Nubank</li><li>Google</li><li>Nestlé</li><li>O Globo</li><li>Avenue</li><li>Zellerfeld</li><li>Stone</li>
+        </ul>
+        <ul class="row__list">
+          <li>Itaú</li><li>Localiza</li><li>iFood</li><li>Compsych</li><li>Nescafé</li><li>Ausenco</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row row--bordered reveal-block">
+      <div class="row__label">Collaborations</div>
+      <div class="row__content row__content--split">
+        <ul class="row__list">
+          <li><a href="https://koto.studio/" target="_blank" rel="noopener" data-cursor="pointer">Koto</a></li>
+          <li><a href="http://futurebrand.com/" target="_blank" rel="noopener" data-cursor="pointer">Futurebrand</a></li>
+          <li><a href="https://metalab.co/" target="_blank" rel="noopener" data-cursor="pointer">Metalab</a></li>
+          <li><a href="https://serious.business/" target="_blank" rel="noopener" data-cursor="pointer">Serious.Business</a></li>
+          <li><a href="https://www.konpo.studio/" target="_blank" rel="noopener" data-cursor="pointer">Konpo</a></li>
+        </ul>
+        <ul class="row__list">
+          <li><a href="https://plau.design/" target="_blank" rel="noopener" data-cursor="pointer">Plau</a></li>
+          <li><a href="http://in.com.br/" target="_blank" rel="noopener" data-cursor="pointer">iN</a></li>
+          <li><a href="https://www.instagram.com/moretalent.tech/" target="_blank" rel="noopener" data-cursor="pointer">Môre</a></li>
+          <li><a href="https://asiaxp.co/" target="_blank" rel="noopener" data-cursor="pointer">Asia</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 3: WORK GALLERY ============ -->
+  <section class="panel panel--work" id="work">
+    <div class="gallery">
+
+      <article class="project reveal-block" style="--ar:1920/1280">
+        <div class="project__media" data-cursor="pointer"><div class="art art--zellerfeld"></div></div>
+        <div class="project__info"><span class="project__title">Zellerfeld</span><span class="project__tag">Identity System, Website Design</span></div>
+      </article>
+
+      <article class="project reveal-block" style="--ar:1440/960">
+        <div class="project__media" data-cursor="pointer"><div class="art art--landsight"></div></div>
+        <div class="project__info"><span class="project__title">Landsight</span><span class="project__tag">Visual Identity, Website Design</span></div>
+      </article>
+
+      <article class="project reveal-block" style="--ar:1920/1280">
+        <div class="project__media" data-cursor="pointer"><div class="art art--opus"></div></div>
+        <div class="project__info"><span class="project__title">Opus</span><span class="project__tag">Art Direction, Website Design</span></div>
+      </article>
+
+      <article class="project reveal-block" style="--ar:2116/1440">
+        <div class="project__media" data-cursor="pointer"><div class="art art--oglobo"></div></div>
+        <div class="project__info"><span class="project__title">O Globo</span><span class="project__tag">Identity System</span></div>
+      </article>
+
+      <article class="project reveal-block" style="--ar:1920/1280">
+        <div class="project__media" data-cursor="pointer"><div class="art art--def"></div></div>
+        <div class="project__info"><span class="project__title">DEF</span><span class="project__tag">Art Direction, Website Design</span></div>
+      </article>
+
+      <article class="project reveal-block" style="--ar:1440/960">
+        <div class="project__media" data-cursor="pointer"><div class="art art--avenue"></div></div>
+        <div class="project__info"><span class="project__title">Avenue</span><span class="project__tag">Art Direction, Visual Identity</span></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ SECTION 4: BIO / RECOGNITION / PROJECTS / LINKS ============ -->
+  <section class="panel panel--bio" id="s4">
+
+    <div class="row row--bordered reveal-block">
+      <div class="row__label row__label--wide">JARCOS is a design practice led by João Ferreira, a Brazilian multidisciplinary designer with over 14 years of experience in branding and digital design.</div>
+      <div class="row__content">
+        <p class="row__para">Started in 2012, JARCOS is both a personal experiment and a collaborative platform, shaped by João's perspective on design and extended through trusted partners.</p>
+        <p class="row__para">The practice focuses on brand identities and digital experiences, built through strategy, storytelling, and craft, in collaboration with global studios and clients across finance, technology, and consumer sectors.</p>
+        <a href="#bio" class="row__link" data-cursor="pointer">Read full bio</a>
+      </div>
+    </div>
+
+    <div class="row row--bordered reveal-block">
+      <div class="row__label">Recognition</div>
+      <ul class="row__content row__list row__list--wide">
+        <li>9× Adobe Best of Behance · +44× Features</li>
+        <li>Awwwards · 1× SOTD · 7× HM</li>
+        <li>iF Design Award · GOL Linhas Aéreas (TangerinaDS)</li>
+        <li>Wolda · Localiza (FutureBrand)</li>
+        <li>Features · Communication Arts · World Brand Design · Mindsparkle Mag</li>
+      </ul>
+    </div>
+
+    <div class="row row--bordered reveal-block">
+      <div class="row__label">Relevant projects</div>
+      <ul class="row__content row__list row__list--wide">
+        <li>Nubank · Brand Identity (Koto)</li>
+        <li>Android Drop · Campaign (Koto)</li>
+        <li>O Globo · Brand Refresh (Asia)</li>
+        <li>Compsych · Brand Identity (Konpo)</li>
+        <li>Avenue · Brand Identity (iN)</li>
+        <li>The Fini Company · Brand Identity (FutureBrand)</li>
+      </ul>
+    </div>
+
+    <div class="row row--bordered reveal-block">
+      <div class="row__label">Quick links</div>
+      <ul class="row__content row__list row__list--wide">
+        <li><a href="https://linkedin.com/in/jarcoswork" target="_blank" rel="noopener" data-cursor="pointer">Linkedin</a></li>
+        <li><a href="https://www.instagram.com/_jarcos/" target="_blank" rel="noopener" data-cursor="pointer">Instagram</a></li>
+        <li><a href="https://savee.com/jarcoswork" target="_blank" rel="noopener" data-cursor="pointer">Savee</a></li>
+        <li><a href="mailto:hi@jarcos.work" data-cursor="pointer">Email</a></li>
+        <li><a href="#agents" data-cursor="pointer">AI Profile</a></li>
+      </ul>
+    </div>
+
+    <div class="row row--bordered row--meta reveal-block">
+      <div class="row__label">
+        <p>© 2026</p>
+        <p class="row__muted">Design-study clone · not affiliated with jarcos.work</p>
+      </div>
+      <div class="row__content">
+        <p class="row__strong">This is a small selection of my work.</p>
+        <a class="row__muted" href="mailto:hi@jarcos.work?subject=Request%20for%20Full%20Portfolio&body=Hi%20Jo%C3%A3o%2C%0A%0ACould%20you%20please%20share%20your%20full%20portfolio%3F%0A%0AThank%20you!" data-cursor="pointer">A full portfolio upon request.</a>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ SECTION 5: CLOSING WORDMARK ============ -->
+  <section class="hero hero--footer" id="s5">
+    <h2 class="wordmark" data-cursor="press">JARCOS</h2>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
