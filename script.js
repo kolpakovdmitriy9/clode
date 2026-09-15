@@ -1,19 +1,24 @@
 /* ───────────────────────────────────────────────────────────────
-   Лента строк: непрерывный вертикальный бег текста, синхронизированный
-   со скроллом секции. Строки, проходящие через центр экрана, — яркие
-   и резкие; у верхнего и нижнего края — гаснут и слегка расплываются.
-   Часть слов заменена вставками-картинками, которые гаснут вместе
-   со своей строкой.
+   Лента строк как настоящий 3D-барабан: каждая строка — грань
+   цилиндра (rotateX + translateZ на общей перспективе), а не плоский
+   текст с имитацией через blur/scale. Барабан крутится вокруг
+   горизонтальной оси синхронно со скроллом секции: строка напротив
+   зрителя (угол ≈0) стоит вровень с экраном и читается чётко,
+   соседние уходят по дуге назад — сжимаются перспективой, размываются
+   и гаснут. Часть слов заменена вставками-картинками, которые
+   уезжают по дуге вместе со своей строкой.
    ─────────────────────────────────────────────────────────────── */
 
 const CFG = {
-  ease      : 0.16,   // «догоняние» скролла — чем меньше, тем тягучее движение ленты
-  focus     : 0.46,   // половина зоны, за пределами которой строка гаснет, в долях высоты экрана
-  hold      : 0.38,   // доля focus, где строка остаётся полностью яркой (плато без затухания)
-  maxBlur   : 3.2,    // максимальное размытие у края экрана, px
-  scaleEdge : 0.92,   // масштаб строки у края
-  scaleFocus: 1,      // масштаб строки в фокусе
-  minOpacity: 0.03,   // строка никогда не гаснет до полного нуля — так честнее по контрасту
+  angleStep    : 18,   // угловой шаг между соседними строками на барабане, град
+  edgeAngle    : 86,   // за этим углом строка уже на обратной стороне барабана — не рисуем
+  visibleLimit : 80,   // угол, после которого строка полностью гаснет
+  hold         : 0.12, // доля visibleLimit, где строка остаётся полностью яркой (плато) — узкое, чтобы кривизна барабана была видна пошире
+  entryPad     : 96,   // запас угла для входа/выхода первой и последней строки, град
+  perspectivePx: 720,  // должно совпадать со значением perspective в CSS (.reel)
+  ease         : 0.14, // «догоняние» скролла инерцией по углу барабана
+  maxBlur      : 2.6,  // максимальное размытие у грани видимости, px — меньше, чтобы кривизна не тонула в блюре
+  minOpacity   : 0.02,
 };
 
 const stage  = document.getElementById('stage');
@@ -21,17 +26,25 @@ const reel   = document.getElementById('reel');
 const listEl = document.getElementById('lines');
 const lines  = Array.from(listEl.querySelectorAll('.line'));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const N = lines.length;
 
 const clamp  = (v, a, b) => v < a ? a : v > b ? b : v;
 const smooth = t => t * t * (3 - 2 * t);
+const DEG = Math.PI / 180;
 
-let viewH = 0, trackH = 0;
-let progress = 0, y = 0, yTarget = 0;
+let radius = 0;                 // радиус барабана, px — считается из реальной высоты строки
+let totalSweep = 0;              // на сколько градусов проворачивается барабан за всю сцену
+let progress = 0, rot = 0, rotTarget = 0;
 let ticking = false;
 
+/* радиус подобран так, чтобы шаг между строками у фронта барабана (угол 0)
+   совпадал с их реальной высотой — иначе соседние строки будут наезжать
+   друг на друга или, наоборот, слишком расходиться */
 function measure(){
-  viewH = reel.clientHeight;
-  trackH = listEl.scrollHeight + viewH;
+  const h = Math.max(...lines.map(el => el.offsetHeight));
+  radius = h / (CFG.angleStep * DEG);
+  listEl.style.transform = `translate(-50%, -50%) translateZ(${(-radius).toFixed(1)}px)`;
+  totalSweep = (N - 1) * CFG.angleStep + 2 * CFG.entryPad;
 }
 
 /* прогресс сцены: 0 — сцена только прилипла, 1 — вот-вот отлипнет */
@@ -42,35 +55,36 @@ function sceneProgress(){
   return clamp(-r.top / total, 0, 1);
 }
 
-function renderLines(){
-  const centerY = viewH / 2;
-  const focusPx = viewH * CFG.focus;
+function renderDrum(){
+  for (let i = 0; i < N; i++){
+    const angle = i * CFG.angleStep + CFG.entryPad - rot;   // текущий угол строки на барабане, град
+    const el = lines[i];
 
-  for (const el of lines){
-    const lineCenter = y + el.offsetTop + el.offsetHeight / 2;
-    const n = clamp(Math.abs(lineCenter - centerY) / focusPx, 0, 1);
-    const t = clamp((n - CFG.hold) / (1 - CFG.hold), 0, 1);   // 0 на плато, 1 у самого края
+    if (Math.abs(angle) > CFG.edgeAngle){
+      el.style.opacity = 0;
+      continue;
+    }
+
+    const n = clamp(Math.abs(angle) / CFG.visibleLimit, 0, 1);
+    const t = clamp((n - CFG.hold) / (1 - CFG.hold), 0, 1);
     const o = Math.max(smooth(1 - t), CFG.minOpacity);
 
+    el.style.transform = `translate(-50%, -50%) rotateX(${(-angle).toFixed(2)}deg) translateZ(${radius.toFixed(1)}px)`;
     el.style.opacity   = o.toFixed(3);
     el.style.filter    = `blur(${(t * CFG.maxBlur).toFixed(2)}px)`;
-    el.style.transform = `scale(${(CFG.scaleEdge + (CFG.scaleFocus - CFG.scaleEdge) * o).toFixed(3)})`;
   }
 }
 
 function loop(){
-  yTarget = viewH - progress * trackH;
-  y += (yTarget - y) * (reduced ? 1 : CFG.ease);
+  rotTarget = progress * totalSweep;
+  rot += (rotTarget - rot) * (reduced ? 1 : CFG.ease);
+  renderDrum();
 
-  listEl.style.transform = `translate(-50%, ${y.toFixed(1)}px)`;
-  renderLines();
-
-  if (!reduced && Math.abs(yTarget - y) > 0.05){
+  if (!reduced && Math.abs(rotTarget - rot) > 0.02){
     requestAnimationFrame(loop);
   } else {
-    y = yTarget;
-    listEl.style.transform = `translate(-50%, ${y.toFixed(1)}px)`;
-    renderLines();
+    rot = rotTarget;
+    renderDrum();
     ticking = false;
   }
 }
@@ -87,6 +101,5 @@ addEventListener('resize', () => { measure(); kick(); });
 
 measure();
 progress = sceneProgress();
-y = yTarget = viewH - progress * trackH;
-listEl.style.transform = `translate(-50%, ${y.toFixed(1)}px)`;
-renderLines();
+rot = rotTarget = progress * totalSweep;
+renderDrum();

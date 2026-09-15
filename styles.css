@@ -59,7 +59,7 @@ body{
   position:sticky;top:0;height:100vh;overflow:hidden;
   background:var(--stage-bg);
 }
-.reel{position:relative;width:100%;height:100%}
+.reel{position:relative;width:100%;height:100%;perspective:720px;perspective-origin:50% 50%}
 
 /* вертикальный туман по краям экрана — усиливает угасание строк на подходе к рамке */
 .sticky::before,.sticky::after{
@@ -68,15 +68,19 @@ body{
 .sticky::before{top:0;background:linear-gradient(to bottom, var(--stage-fade) 0%, transparent 100%)}
 .sticky::after{bottom:0;background:linear-gradient(to top, var(--stage-fade) 0%, transparent 100%)}
 
+/* лента — сама поверхность барабана: сдвинута вглубь на радиус,
+   чтобы строка в фокусе (угол 0) оказалась вровень с экраном,
+   а остальные уходили за него по мере поворота */
 .lines{
-  position:absolute;left:50%;top:0;
+  position:absolute;left:50%;top:50%;
   width:min(92vw,900px);
-  transform:translate(-50%,0);
+  transform-style:preserve-3d;
   will-change:transform;
 }
 .line{
+  position:absolute;left:50%;top:50%;
+  width:100%;
   margin:0;
-  padding:1.1vh 0;
   text-align:center;
   white-space:nowrap;
   font-weight:800;
@@ -87,6 +91,7 @@ body{
   /* металлический блик: светлый край сверху и снизу, приглушённая середина */
   background:linear-gradient(180deg,#fff 0%,#d6d6dd 32%,#84848f 50%,#d6d6dd 68%,#fff 100%);
   -webkit-background-clip:text;background-clip:text;
+  backface-visibility:hidden;
   will-change:transform,opacity,filter;
 }
 .line i{
