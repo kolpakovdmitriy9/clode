@@ -3,30 +3,11 @@
   --ink:#0d0d0f;
   --muted:#6b6b73;
   --hair:#c8c8cf;
-  --badge-bg:#e9e9ec;
-  --badge-ink:#3a3a42;
-  /* градиент «нагрева» деления: холодное → среднее → горячее → акцент блока */
-  --tick-cold:#ceced4;
-  --tick-mid:#8c8c94;
-  --tick-hot:#202026;
-  /* акцент каждого текстового блока: --c1 для первого, --c2 для второго и т.д. */
-  --c1:#ff4a22;
-  --c2:#12b76a;
-  --c3:#2e6bf5;
-  --accent:var(--c1);          /* текущий акцент, скрипт переписывает его по скроллу */
-  /* типографика по макету: начертания Book и Regular, трекинг −2%.
-     Трекинг задаётся на каждом текстовом элементе: em наследуется уже в px. */
-  --book:400;                  /* шрифт идёт одним начертанием Regular, */
-  --regular:400;               /* поэтому Book и Regular сведены к 400 */
-  --tracking:-.02em;
-  /* размеры сняты с макета при круге 952 и выражены в vmin, чтобы расти вместе с кольцом */
-  --icon:clamp(56px,8.6vmin,96px);
-  --num:clamp(44px,8.06vmin,90px);
-  --h:clamp(22px,4.3vmin,48px);
-  --p:clamp(14px,2.15vmin,24px);
-  --gap:clamp(16px,2.87vmin,32px);
-  --slides:3;                  /* количество блоков — должно совпадать с числом .slide */
-  --stage-vh:120;              /* сколько vh скролла приходится на один блок */
+  /* сцена всегда тёмная, независимо от темы страницы — это часть эффекта */
+  --stage-bg:#050505;
+  --stage-fade:#050505;
+  --lines:9;            /* количество строк — должно совпадать с числом .line */
+  --line-vh:46;          /* сколько vh скролла приходится на переход между строками */
 }
 
 @media (prefers-color-scheme:dark){
@@ -35,14 +16,6 @@
     --ink:#f3f3f6;
     --muted:#93939e;
     --hair:#3a3a44;
-    --badge-bg:#1d1d23;
-    --badge-ink:#c9c9d2;
-    --tick-cold:#2f2f38;
-    --tick-mid:#6e6e7a;
-    --tick-hot:#ededf2;
-    --c1:#ff6a45;
-    --c2:#2fd48a;
-    --c3:#5a8cff;
   }
 }
 :root[data-theme="dark"]{
@@ -50,14 +23,6 @@
   --ink:#f3f3f6;
   --muted:#93939e;
   --hair:#3a3a44;
-  --badge-bg:#1d1d23;
-  --badge-ink:#c9c9d2;
-  --tick-cold:#2f2f38;
-  --tick-mid:#6e6e7a;
-  --tick-hot:#ededf2;
-  --c1:#ff6a45;
-  --c2:#2fd48a;
-  --c3:#5a8cff;
 }
 
 *{box-sizing:border-box}
@@ -83,80 +48,64 @@ body{
 .mouse span{position:absolute;left:50%;top:8px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:var(--muted);animation:wheel 1.6s ease-in-out infinite}
 @keyframes wheel{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(14px);opacity:0}}
 
-/* ───────────── сцена со sticky-кругом ───────────── */
+/* ───────────── сцена со sticky-лентой ───────────── */
 .stage{
   position:relative;
-  /* длина прокрутки сцены: по одному экрану на блок + экран на «доводку» */
-  height:calc((var(--slides) * var(--stage-vh) * 1vh) + 100vh);
+  background:var(--stage-bg);
+  /* длина прокрутки сцены: по переходу на каждую строку + экран на «доводку» */
+  height:calc((var(--lines) * var(--line-vh) * 1vh) + 100vh);
 }
-.sticky{position:sticky;top:0;height:100vh;display:grid;place-items:center;overflow:hidden}
-
-.dial{
-  position:relative;
-  width:min(96vmin,1040px);
-  aspect-ratio:1/1;
-  display:grid;place-items:center;
+.sticky{
+  position:sticky;top:0;height:100vh;overflow:hidden;
+  background:var(--stage-bg);
 }
-.dial__svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;will-change:transform}
+.reel{position:relative;width:100%;height:100%}
 
-.ticks line{stroke-linecap:butt}
-/* прозрачностью дуги управляет скрипт — в CSS её задавать нельзя, стиль перебьёт атрибут */
-.aura{stroke-width:24}
-
-/* ───────────── контент внутри круга ───────────── */
-.slides{
-  position:relative;
-  width:min(58%,617px);
-  display:grid;
-  place-items:center;
+/* вертикальный туман по краям экрана — усиливает угасание строк на подходе к рамке */
+.sticky::before,.sticky::after{
+  content:"";position:absolute;left:0;right:0;height:30vh;pointer-events:none;z-index:2;
 }
-.slide{
-  grid-area:1/1;
+.sticky::before{top:0;background:linear-gradient(to bottom, var(--stage-fade) 0%, transparent 100%)}
+.sticky::after{bottom:0;background:linear-gradient(to top, var(--stage-fade) 0%, transparent 100%)}
+
+.lines{
+  position:absolute;left:50%;top:0;
+  width:min(92vw,900px);
+  transform:translate(-50%,0);
+  will-change:transform;
+}
+.line{
+  margin:0;
+  padding:1.1vh 0;
   text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:var(--gap);
-  opacity:0;
-  will-change:opacity,transform;
-  pointer-events:none;
+  white-space:nowrap;
+  font-weight:800;
+  font-size:clamp(22px,6.4vw,60px);
+  line-height:1.18;
+  letter-spacing:-.02em;
+  color:transparent;
+  /* металлический блик: светлый край сверху и снизу, приглушённая середина */
+  background:linear-gradient(180deg,#fff 0%,#d6d6dd 32%,#84848f 50%,#d6d6dd 68%,#fff 100%);
+  -webkit-background-clip:text;background-clip:text;
+  will-change:transform,opacity,filter;
 }
-.mark,.copy{display:flex;flex-direction:column;align-items:center;gap:var(--gap)}
-.copy{width:100%}
-.icon{
-  width:var(--icon);height:var(--icon);flex:none;
-  border:1px solid var(--accent);border-radius:50%;
-  display:grid;place-items:center;color:var(--accent);
+.line i{
+  font-style:italic;
+  font-weight:900;
+  background:inherit;
+  -webkit-background-clip:text;background-clip:text;
 }
-/* иконка у каждого блока своя: по умолчанию заливка,
-   обводочному глифу достаточно своих fill и stroke в атрибутах */
-.icon svg{width:38%;height:38%}
-.icon svg:not([fill]){fill:currentColor}
-/* число набрано Regular без трекинга — в макете межбуквенное задано только тексту */
-.count{
-  color:var(--accent);font-size:var(--num);font-weight:var(--regular);
-  line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;
+
+.chip{
+  display:inline-flex;vertical-align:-.14em;
+  width:.92em;height:.92em;margin:0 .12em;
+  border-radius:26%;overflow:hidden;flex:none;
+  box-shadow:0 .05em .35em rgba(0,0,0,.55);
 }
-.slide h2{
-  margin:0;font-size:var(--h);line-height:1;
-  letter-spacing:var(--tracking);font-weight:var(--regular);text-wrap:balance;
-}
-.slide p{
-  margin:0;color:var(--ink);
-  font-size:var(--p);line-height:1.2;font-weight:var(--book);letter-spacing:var(--tracking);
-}
+.chip svg{width:100%;height:100%;display:block}
 
 @media (max-width:640px){
-  .slides{width:64%}
-  /* на узких экранах верстаем текст потоком, а не по авторским строкам */
-  .slide h2 br,.slide p br{display:none}
-}
-
-/* Мобильный круг: не сжимаем его под ширину экрана — пусть уходит за края,
-   а текст держит свою ширину независимо от диаметра кольца. Центрируем через
-   absolute, а не place-items:center: когда элемент шире контейнера с
-   overflow:hidden, грид по умолчанию откатывается на 'safe center'
-   (по факту прижимает к левому краю), чтобы не терять контент при скролле. */
-@media (max-width:480px){
-  .dial{width:150vmin;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
-  .slides{width:min(80vw,340px)}
+  .lines{width:94vw}
 }
 
 @media (prefers-reduced-motion:reduce){

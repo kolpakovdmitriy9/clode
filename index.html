@@ -3,84 +3,83 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Круг с делениями — анимация при скролле</title>
+<title>Лента строк с вставками изображений — анимация при скролле</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <section class="intro">
   <p class="kicker">Скролльте вниз</p>
-  <h1>Круг с делениями</h1>
-  <p class="sub">Деления вытягиваются магнитом в верхней зоне и плавно окрашиваются градиентом</p>
+  <h1>Текст, который дышит</h1>
+  <p class="sub">Строки бегущей ленты вспыхивают, попадая в фокус по центру экрана, и гаснут у краёв — а часть слов на ходу сменяется живыми вставками-картинками</p>
   <div class="mouse" aria-hidden="true"><span></span></div>
 </section>
 
-<!-- ─── Сцена: высота = кол-во слайдов × 100vh + запас ─── -->
+<!-- ─── Сцена: высота = кол-во строк × vh-на-строку + запас ─── -->
 <section class="stage" id="stage">
   <div class="sticky">
-    <div class="dial" id="dial">
-
-      <svg class="dial__svg" viewBox="0 0 560 560" aria-hidden="true">
-        <defs>
-          <linearGradient id="auraGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%"   stop-color="var(--accent)" stop-opacity="0"></stop>
-            <stop offset="50%"  stop-color="var(--accent)" stop-opacity=".55"></stop>
-            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"></stop>
-          </linearGradient>
-          <filter id="auraBlur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="9"></feGaussianBlur>
-          </filter>
-        </defs>
-
-        <!-- мягкая подсветка верхней зоны -->
-        <path id="aura" class="aura" filter="url(#auraBlur)"
-              stroke="url(#auraGrad)" fill="none" stroke-linecap="round"></path>
-        <path id="auraHover" class="aura" filter="url(#auraBlur)"
-              stroke="url(#auraGrad)" fill="none" stroke-linecap="round" opacity="0"></path>
-
-        <!-- деления генерируются скриптом -->
-        <g id="ticks" class="ticks"></g>
-      </svg>
-
-      <!-- контент внутри круга -->
-      <div class="slides" id="slides">
-        <article class="slide">
-          <div class="mark">
-            <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M5 7C5 4.23858 7.23858 2 10 2H14C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V7ZM11 7C11 6.44772 11.4477 6 12 6C12.5523 6 13 6.44772 13 7V10C13 10.5523 12.5523 11 12 11C11.4477 11 11 10.5523 11 10V7Z"/></svg></span>
-            <span class="count">10 994</span>
-          </div>
-          <div class="copy">
-            <h2>Проскроллено в Figma</h2>
-            <p>Столько метров до дна Марианской впадины. <br>Туда не доплывают даже батискафы, а я долистал</p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="mark">
-            <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 4-6 5 5"/><path d="M3 21h18"/></svg></span>
-            <span class="count">128</span>
-          </div>
-          <div class="copy">
-            <h2>Ускоряем загрузку <br>и растим конверсию</h2>
-            <p>Оптимизируем Core Web Vitals и путь пользователя, <br>чтобы каждый визит приносил больше заказов</p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="mark">
-            <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8z"/></svg></span>
-            <span class="count">17</span>
-          </div>
-          <div class="copy">
-            <h2>Поддерживаем проект <br>после запуска</h2>
-            <p>Развиваем функциональность, следим за метриками <br>и держим витрину стабильной 24/7</p>
-          </div>
-        </article>
+    <div class="reel" id="reel">
+      <div class="lines" id="lines">
+        <p class="line">Хороший <i>скролл</i></p>
+        <p class="line">это когда</p>
+        <p class="line">страница
+          <span class="chip chip--a" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <defs>
+                <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#ffd58a"></stop>
+                  <stop offset="55%" stop-color="#ff8a65"></stop>
+                  <stop offset="100%" stop-color="#ff5f7e"></stop>
+                </linearGradient>
+              </defs>
+              <rect width="32" height="32" fill="url(#gA)"></rect>
+              <circle cx="22" cy="9" r="5.5" fill="#fff" opacity=".85"></circle>
+              <path d="M0 24c5-6 11-6 16-2s11 4 16-2v10H0z" fill="#c8452f" opacity=".55"></path>
+            </svg>
+          </span>
+          <i>дышит</i>
+        </p>
+        <p class="line">а не просто</p>
+        <p class="line"><i>едет</i> мимо</p>
+        <p class="line">каждая
+          <span class="chip chip--b" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <defs>
+                <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#7cf5d4"></stop>
+                  <stop offset="100%" stop-color="#3a7bfa"></stop>
+                </linearGradient>
+              </defs>
+              <rect width="32" height="32" fill="url(#gB)"></rect>
+              <rect x="5" y="6" width="9" height="9" rx="2" fill="#fff" opacity=".9"></rect>
+              <rect x="18" y="6" width="9" height="20" rx="2" fill="#0b2447" opacity=".55"></rect>
+              <rect x="5" y="19" width="9" height="7" rx="2" fill="#fff" opacity=".55"></rect>
+            </svg>
+          </span>
+          деталь
+        </p>
+        <p class="line">держит <i>взгляд</i></p>
+        <p class="line">дольше чем</p>
+        <p class="line">три
+          <span class="chip chip--c" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <defs>
+                <linearGradient id="gC" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#c9a6ff"></stop>
+                  <stop offset="100%" stop-color="#6a5cff"></stop>
+                </linearGradient>
+              </defs>
+              <rect width="32" height="32" fill="url(#gC)"></rect>
+              <circle cx="16" cy="16" r="10" fill="none" stroke="#fff" stroke-width="2" opacity=".85"></circle>
+              <path d="M16 9v7l5 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+          <i>секунды</i>
+        </p>
       </div>
-
     </div>
   </div>
 </section>
@@ -88,7 +87,7 @@
 <section class="outro">
   <div class="copy">
     <h2>Конец сцены</h2>
-    <p>Круг остаётся зафиксированным ровно на длину сцены, дальше страница скроллится обычным образом.</p>
+    <p>Лента остаётся зафиксированной ровно на длину сцены, дальше страница скроллится обычным образом.</p>
   </div>
 </section>
 
