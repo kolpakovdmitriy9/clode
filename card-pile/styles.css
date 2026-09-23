@@ -34,6 +34,8 @@ html, body {
   overflow: hidden;
   backface-visibility: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  /* длительность совпадает с SINK_MS в script.js */
+  transition: transform 900ms cubic-bezier(0.4, 0, 0.2, 1), opacity 900ms linear;
 }
 
 .hint {

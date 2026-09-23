@@ -11,8 +11,8 @@
  *    наклонены в разные стороны;
  *  - интервал между карточками 2–8 кадров (≈70–260 мс), неровный;
  *  - нижние карточки пропадают мгновенно.
- * Здесь колода зациклена: новая карточка ложится сверху, самая нижняя
- * убирается, и так бесконечно.
+ * Здесь колода зациклена: новая карточка ложится сверху, а нижние заранее
+ * незаметно уменьшаются и уходят под кучу, после чего удаляются.
  */
 (() => {
   const pile = document.getElementById('pile');
@@ -39,7 +39,13 @@
     { cls: 'hills', w: 0.40, h: 0.30 },
   ];
 
-  const MAX_CARDS = 11;          // сколько карточек лежит в куче одновременно
+  const MAX_CARDS = 12;          // сколько карточек лежит в куче одновременно
+  // Уход вниз: начиная с SINK_FROM-й карточки сверху карточка понемногу
+  // уменьшается и сползает к центру кучи, прячась под верхними. Самая
+  // нижняя к моменту удаления уже полностью закрыта — исчезновение не видно.
+  const SINK_FROM = 6;
+  const SINK_SCALE = 0.55;       // масштаб у самой нижней карточки
+  const SINK_MS = 900;           // плавность перехода между ступенями
   const SPREAD_X = 0.2;          // разброс центра по горизонтали, доли S
   const SPREAD_Y = 0.08;         // …и по вертикали
   const MIN_STEP = 0.11;         // новая карточка не ложится ровно на предыдущую
@@ -96,7 +102,18 @@
     el.style.height = h + 'px';
     el.style.left = -w / 2 + 'px';
     el.style.top = -h / 2 + 'px';
-    el.style.transform = transformOf(el._pos, 0, 0, 1);
+    applyDepth(el);
+  }
+
+  // k — сколько карточек лежит поверх этой (0 — верхняя)
+  function applyDepth(el) {
+    const k = el._depth || 0;
+    const t = Math.min(Math.max((k - SINK_FROM) / (MAX_CARDS - SINK_FROM), 0), 1);
+    const e = t * t * (3 - 2 * t); // smoothstep: начало ухода незаметно
+    const p = el._pos;
+    const sunk = { x: p.x * (1 - e), y: p.y * (1 - e), r: p.r * (1 - 0.5 * e) };
+    el.style.transform = transformOf(sunk, 0, 0, (1 - (1 - SINK_SCALE) * e).toFixed(4));
+    el.style.opacity = k >= MAX_CARDS ? '0' : '1';
   }
 
   function drop() {
@@ -121,8 +138,18 @@
       );
     }
 
-    // нижние карточки исчезают мгновенно
-    while (pile.children.length > MAX_CARDS) pile.firstElementChild.remove();
+    // все, кто ниже, опускаются на ступень; вышедшие за предел — удаляются,
+    // когда уже спрятаны под кучей
+    const cards = pile.children;
+    for (let i = cards.length - 2, k = 1; i >= 0; i--, k++) {
+      const c = cards[i];
+      c._depth = k;
+      applyDepth(c);
+      if (k >= MAX_CARDS && !c._leaving) {
+        c._leaving = true;
+        setTimeout(() => c.remove(), SINK_MS);
+      }
+    }
     lastDrop = performance.now();
   }
 
