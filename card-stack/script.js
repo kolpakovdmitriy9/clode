@@ -16,6 +16,10 @@
 
   // w, h — в долях базовой высоты H; rot/dx — «характер» карточки в хвосте
   const CARDS = [
+    { cls: 'poster', w: 0.74, h: 1.00, rot: -12, dx: -0.10,
+      html: '<span class="t1">Hold<br><span class="indent">the light</span></span>' +
+            '<i class="mark"></i>' +
+            '<span class="t2">and<br><span class="indent">let go.</span></span>' },
     { cls: 'head',   w: 0.80, h: 0.62, rot: -14, dx: -0.10 },
     { cls: 'poster poster-light', w: 0.74, h: 0.86, rot: 12, dx: 0.12,
       html: '<span class="t1">Slow</span><span class="t2">down.</span>' },
@@ -25,10 +29,6 @@
     { cls: 'profile', w: 0.80, h: 0.80, rot: 16, dx: 0.10 },
     { cls: 'ferry',  w: 0.80, h: 0.68, rot: -8, dx: -0.06 },
     { cls: 'tulip',  w: 0.86, h: 0.90, rot: 14, dx: 0.10 },
-    { cls: 'poster', w: 0.74, h: 1.00, rot: -12, dx: -0.10,
-      html: '<span class="t1">Hold<br><span class="indent">the light</span></span>' +
-            '<i class="mark"></i>' +
-            '<span class="t2">and<br><span class="indent">let go.</span></span>' },
     { cls: 'court',  w: 0.82, h: 0.62, rot: 10, dx: 0.08 },
     { cls: 'label',  w: 0.60, h: 0.46, rot: -16, dx: -0.12, html: 'SS27' },
     { cls: 'car',    w: 0.80, h: 0.82, rot: 12, dx: 0.10 },
@@ -36,7 +36,7 @@
     { cls: 'seats',  w: 0.76, h: 1.10, rot: -15, dx: -0.05 },
   ];
 
-  const REST_P = 8;   // состояние покоя: сверху постер, хвост — «башня» + «море»
+  const REST_P = 0;   // состояние покоя: одна карточка, стопки за ней нет
 
   // Траектория по глубине d (снята покадрово с видео, 30 fps)
   //        d     y/H     scale  k(rot,dx)  opacity  brightness
@@ -55,21 +55,22 @@
   const D_MAX = PATH[PATH.length - 1][0];
 
   // Плейхед после клика: момент (с) появления каждой карточки. Сначала
-  // медленно (~0.3 с на карточку), затем разгон до ~0.07–0.15 с, после
-  // последней — хвост не тормозит, а разгоняется и улетает за край (~1.5 с).
+  // медленно (~0.3 с на карточку), затем разгон до ~0.07–0.15 с.
+  // Дальше — уход последней карточки (см. EXIT_*).
   const TIMELINE = [
     [0.00, 0], [0.27, 1], [0.60, 2], [0.87, 3], [1.03, 4], [1.13, 5],
     [1.24, 6], [1.42, 7], [1.53, 8], [1.67, 9], [1.83, 10], [1.97, 11],
-    [2.07, 12], [2.20, 13], [2.80, 16.5], [3.30, 19.5], [3.70, 22.2],
+    [2.07, 12], [2.20, 13], [2.35, 14],
   ];
   const LAST = CARDS.length - 1;
-  // Когда последняя карточка набирает глубину LAUNCH_D (пик рывка вверх),
-  // плейхед перестаёт идти по таймлайну: карточка летит с постоянным
-  // ускорением (в долях H/с²), пока не скроется за верхним краем.
-  const LAUNCH_D = 4.6;
-  const LAUNCH_ACCEL = 4;
+  // Уход последней карточки — одно ease-in движение без «ступенек»: как только
+  // она легла сверху, «видимый путь» u (подъём + уменьшение, в долях H) растёт
+  // как u = V0·τ + ½·A·τ², а глубина d находится обратным пересчётом из u.
+  // Благодаря этому сжатие на месте занимает ~0.2 с и перетекает во взлёт.
+  const EXIT_V0 = 0.3;     // H/с — стартовая скорость
+  const EXIT_ACCEL = 4.4;  // H/с² — разгон (весь уход ≈ 1 с)
+  const SCALE_WEIGHT = 0.6; // сколько «весит» уменьшение по сравнению с подъёмом
 
-  const FADE_OUT = 330;   // стопка гаснет после клика, мс
   const GAP_AFTER = 250;  // пауза: вместе с догоранием хвоста ≈ 0.4 с пустой сцены
   const FADE_IN = 170;    // возврат стопки покоя
 
@@ -107,8 +108,21 @@
   const pathK = monotone(col(0), col(3));
   const pathO = monotone(col(0), col(4));
   const pathB = monotone(col(0), col(5));
-  // |dy/dd| траектории — во сколько раз смещение по глубине двигает карточку по экрану
-  const slopeY = (d) => (pathY(d) - pathY(d + 0.01)) / 0.01;
+  // Таблица «видимого пути» L(d) = ∫ |y'| + w·|s'| — для обратного пересчёта u → d
+  const L_STEP = 0.01;
+  const L_TABLE = [0];
+  for (let d = 0; d < D_MAX; d += L_STEP) {
+    const dy = Math.abs(pathY(d + L_STEP) - pathY(d));
+    const ds = Math.abs(pathS(d + L_STEP) - pathS(d));
+    L_TABLE.push(L_TABLE[L_TABLE.length - 1] + dy + SCALE_WEIGHT * ds);
+  }
+  const L_TOTAL = L_TABLE[L_TABLE.length - 1];
+  function depthAt(u) {
+    let lo = 0, hi = L_TABLE.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (L_TABLE[mid] < u) lo = mid; else hi = mid; }
+    const f = (u - L_TABLE[lo]) / ((L_TABLE[hi] - L_TABLE[lo]) || 1);
+    return (lo + f) * L_STEP;
+  }
   const playhead = monotone(TIMELINE.map((r) => r[0]), TIMELINE.map((r) => r[1]));
 
   /* ---------- сборка DOM ---------- */
@@ -185,35 +199,24 @@
   function run() {
     if (running) return;
     running = true;
-    setDeck('hide');
-
-    setTimeout(() => {
-      render(playhead(0));
-      setDeck('show-instant');
-      const t0 = performance.now();
-      let lastT = 0, p = 0, launched = false, v = 0;
-      const tick = (now) => {
-        const t = Math.max(0, (now - t0) / 1000);
-        const dt = Math.min(t - lastT, 0.05);
-        lastT = t;
-        if (!launched) {
-          p = playhead(t);
-          if (p - LAST >= LAUNCH_D) {
-            // стартовая экранная скорость = та, с которой карточка уже летит
-            launched = true;
-            v = slopeY(p - LAST) * (playhead(t + 0.01) - playhead(t)) / 0.01;
-          }
-        } else {
-          // свободный вылет: экранная скорость только растёт, без провала
-          v += LAUNCH_ACCEL * dt;
-          p += (v / Math.max(slopeY(p - LAST), 0.2)) * dt;
-        }
-        render(p);
-        if (p - LAST < D_MAX) requestAnimationFrame(tick);
-        else finish();
-      };
-      requestAnimationFrame(tick);
-    }, FADE_OUT);
+    // Покой = первая карточка колоды, поэтому новые сразу ложатся на неё
+    const t0 = performance.now();
+    let exitT = -1, p = 0;
+    const tick = (now) => {
+      const t = Math.max(0, (now - t0) / 1000);
+      if (exitT < 0) {
+        p = Math.min(playhead(t), LAST);
+        if (p >= LAST) exitT = t;
+      } else {
+        const tau = t - exitT;
+        const u = EXIT_V0 * tau + 0.5 * EXIT_ACCEL * tau * tau;
+        p = u >= L_TOTAL ? LAST + D_MAX : LAST + depthAt(u);
+      }
+      render(p);
+      if (p - LAST < D_MAX) requestAnimationFrame(tick);
+      else finish();
+    };
+    requestAnimationFrame(tick);
   }
 
   function finish() {
