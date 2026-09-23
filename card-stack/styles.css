@@ -1,0 +1,212 @@
+:root {
+  --bg: #0a0a0d;
+  --orange: #ff4d1c;
+  --ink: #1a0d08;
+  --H: 47vh;               /* высота «базовой» карточки: 215px из 458px кадра */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Точка, вокруг которой строится стопка: центр передней карточки */
+.deck {
+  position: absolute;
+  left: 50%;
+  top: 49%;
+  width: 0;
+  height: 0;
+  transition: opacity 300ms cubic-bezier(0, 0, 0.1, 1);
+}
+.deck.is-hidden { opacity: 0; }
+.deck.is-instant { transition: none; }
+.deck.is-fadein { transition: opacity 170ms linear; }
+
+.card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  will-change: transform, opacity, filter;
+  visibility: hidden;
+}
+
+.hint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  margin: 0;
+  text-align: center;
+  font: 600 12px/1 "Space Grotesk", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+/* ---------- Оформление карточек (плейсхолдеры: CSS-графика) ---------- */
+
+.art { position: absolute; inset: 0; }
+
+.poster {
+  background: var(--orange);
+  color: var(--ink);
+  font-family: "EB Garamond", Georgia, serif;
+  font-weight: 500;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+}
+.poster .t1, .poster .t2 {
+  position: absolute;
+  left: 13%;
+  font-size: calc(var(--H) * 0.105);
+}
+.poster .t1 { top: 9%; }
+.poster .t2 { bottom: 7%; }
+.poster .indent { padding-left: 0.9em; }
+.poster .mark {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 4%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translate(-50%, -50%);
+}
+
+.poster-light {
+  background:
+    radial-gradient(60% 50% at 70% 30%, #ff2bd0 0%, rgba(255, 43, 208, 0) 70%),
+    radial-gradient(70% 60% at 85% 55%, #ff3b1c 0%, rgba(255, 59, 28, 0) 75%),
+    linear-gradient(180deg, #ffd3ea 0%, #fff 72%);
+}
+.poster-light .t2 { left: auto; right: 12%; text-align: right; bottom: 6%; }
+
+.blob {
+  background:
+    radial-gradient(45% 55% at 50% 50%, #ff6a00 0%, #ffab5e 35%, rgba(255, 171, 94, 0) 72%),
+    linear-gradient(180deg, #cfd9e6, #b9c7d8);
+  filter: saturate(1.1);
+}
+
+.sea {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.9) 0 1.5%, transparent 2.5%),
+    radial-gradient(circle at 65% 20%, rgba(255,255,255,.8) 0 1.2%, transparent 2.2%),
+    radial-gradient(circle at 40% 70%, rgba(255,255,255,.85) 0 1.4%, transparent 2.4%),
+    radial-gradient(circle at 80% 75%, rgba(255,255,255,.7) 0 1%, transparent 2%),
+    repeating-linear-gradient(-12deg, #4d86a8 0 7%, #7fb2cc 7% 11%, #3f7597 11% 17%),
+    #5a93b3;
+}
+
+.sky {
+  background:
+    linear-gradient(118deg, transparent 0 48%, #e8e6e1 48% 100%) bottom right / 100% 55% no-repeat,
+    linear-gradient(62deg, #cfcdc8 0 45%, transparent 45%) bottom left / 70% 45% no-repeat,
+    linear-gradient(180deg, #5f9fd6 0%, #b9d8ef 100%);
+}
+
+.tower {
+  background:
+    linear-gradient(115deg, transparent 0 40%, #d9d4cc 40% 70%, transparent 70%) bottom / 100% 70% no-repeat,
+    linear-gradient(115deg, transparent 0 40%, #3c4652 40%) bottom / 100% 70% no-repeat,
+    linear-gradient(180deg, #7eb6dd, #bfdcef);
+}
+
+.bloom { background: #efc9a3; }
+.bloom::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 38%;
+  width: 62%; aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(circle, #8f3a00 0 20%, transparent 21%),
+    repeating-conic-gradient(#ff7a00 0 9deg, #ffa53a 9deg 18deg);
+}
+.bloom::after {
+  content: "";
+  position: absolute;
+  left: 49%; top: 58%;
+  width: 2.4%; height: 42%;
+  background: #5d8a3a;
+}
+
+.label {
+  background: var(--orange);
+  color: var(--ink);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  font-size: calc(var(--H) * 0.2);
+  letter-spacing: -0.04em;
+}
+
+.profile {
+  background:
+    radial-gradient(38% 30% at 58% 40%, #121416 0 98%, transparent 100%),
+    radial-gradient(60% 40% at 55% 105%, #121416 0 98%, transparent 100%),
+    radial-gradient(90% 90% at 30% 20%, #2f6fa0, #173e5e);
+}
+
+.head {
+  background:
+    radial-gradient(26% 34% at 48% 44%, #0f0c0b 0 98%, transparent 100%),
+    radial-gradient(50% 36% at 48% 108%, #0f0c0b 0 98%, transparent 100%),
+    linear-gradient(135deg, #ff5a1f, #e23b12);
+}
+
+.ferry {
+  background:
+    repeating-linear-gradient(90deg, #e2352f 0 9%, #ff5b4d 9% 12%, #b8231f 12% 18%) bottom / 100% 34% no-repeat,
+    linear-gradient(180deg, transparent 0 34%, #7da6c2 34% 44%, #9fb7c4 44% 52%, transparent 52%),
+    repeating-linear-gradient(90deg, #f4f4f2 0 3%, transparent 3% 25%),
+    linear-gradient(180deg, #f2f2f0, #dcdcd8);
+}
+
+.tulip {
+  background:
+    radial-gradient(18% 26% at 30% 48%, #ff7a1a 0 70%, #d04a00 96%, transparent 100%),
+    radial-gradient(20% 28% at 70% 40%, #ff8f2e 0 70%, #d95500 96%, transparent 100%),
+    radial-gradient(16% 22% at 52% 74%, #ff6a00 0 70%, #c64300 96%, transparent 100%),
+    linear-gradient(180deg, #4c8ed1, #a6cdee 60%, #f1c14a);
+}
+
+.court {
+  background:
+    radial-gradient(circle at 40% 55%, transparent 0 11%, #f7f7f7 11% 12.5%, transparent 13%),
+    linear-gradient(20deg, transparent 0 60%, rgba(30,15,10,.55) 60% 75%, transparent 75%),
+    linear-gradient(180deg, #c2653d, #a4492a);
+}
+
+.car {
+  background:
+    linear-gradient(170deg, transparent 0 30%, #f3efe8 30% 62%, #c9c2b8 62% 66%, #f3efe8 66% 80%, transparent 80%),
+    linear-gradient(90deg, transparent 0 78%, #b9181b 78% 83%, transparent 83%) center / 100% 40% no-repeat,
+    linear-gradient(180deg, #1c1c1c, #0b0b0b);
+}
+
+.seats {
+  background:
+    repeating-linear-gradient(35deg, rgba(0,0,0,.55) 0 3%, transparent 3% 11%),
+    repeating-linear-gradient(-55deg, #ff4b12 0 6%, #c92d06 6% 9%, #3a0b04 9% 12%),
+    #8a1d05;
+}
