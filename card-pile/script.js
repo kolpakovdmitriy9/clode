@@ -16,7 +16,6 @@
  */
 (() => {
   const pile = document.getElementById('pile');
-  const stage = document.getElementById('stage');
 
   // w, h — в долях масштабной единицы S (высота кадра референса)
   const DESIGNS = [
@@ -63,14 +62,12 @@
 
   // Неровный ритм, как в референсе: интервалы в кадрах 30 fps
   const RHYTHM_FRAMES = [5, 3, 6, 4, 7, 3, 5, 8, 4, 6, 3, 5];
-  const POINTER_MIN_MS = 70;     // при движении курсора — не чаще
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let S = 0;
   let seq = 0;
   let last = { x: 0, y: 0, r: 0 };
-  let lastDrop = 0;
   let timer = 0;
 
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -167,7 +164,6 @@
     for (let i = cards.length - 2, k = 1; i >= 0; i--, k++) {
       cards[i]._depth = Math.min(k, MAX_CARDS + 1);
     }
-    lastDrop = performance.now();
   }
 
   let beat = 0;
@@ -176,12 +172,6 @@
     const ms = reduceMotion ? 700 : frames * (1000 / 30);
     timer = setTimeout(() => { drop(); schedule(); }, ms);
   }
-
-  // Движение курсора подкидывает карточки чаще — как на записи
-  stage.addEventListener('pointermove', () => {
-    if (reduceMotion) return;
-    if (performance.now() - lastDrop >= POINTER_MIN_MS) drop();
-  });
 
   document.addEventListener('visibilitychange', () => {
     clearTimeout(timer);
