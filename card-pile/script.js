@@ -45,7 +45,10 @@
   // нижняя к моменту удаления уже полностью закрыта — исчезновение не видно.
   const SINK_FROM = 6;
   const SINK_SCALE = 0.55;       // масштаб у самой нижней карточки
-  const SINK_MS = 900;           // плавность перехода между ступенями
+  // Глубина карточки догоняет свою ступень пружиной с критическим
+  // затуханием: скорость не сбрасывается, когда сверху ложится следующая
+  // карточка, поэтому куча оседает непрерывно, без рывков.
+  const SINK_OMEGA = 5;          // 1/с — жёсткость пружины (≈0.8 с до ступени)
   const SPREAD_X = 0.2;          // разброс центра по горизонтали, доли S
   const SPREAD_Y = 0.08;         // …и по вертикали
   const MIN_STEP = 0.11;         // новая карточка не ложится ровно на предыдущую
@@ -105,15 +108,36 @@
     applyDepth(el);
   }
 
-  // k — сколько карточек лежит поверх этой (0 — верхняя)
+  // Рисует карточку по её плавной глубине _dv (0 — верхняя)
   function applyDepth(el) {
-    const k = el._depth || 0;
+    const k = el._dv || 0;
     const t = Math.min(Math.max((k - SINK_FROM) / (MAX_CARDS - SINK_FROM), 0), 1);
     const e = t * t * (3 - 2 * t); // smoothstep: начало ухода незаметно
     const p = el._pos;
     const sunk = { x: p.x * (1 - e), y: p.y * (1 - e), r: p.r * (1 - 0.5 * e) };
     el.style.transform = transformOf(sunk, 0, 0, (1 - (1 - SINK_SCALE) * e).toFixed(4));
-    el.style.opacity = k >= MAX_CARDS ? '0' : '1';
+    const o = Math.min(Math.max(MAX_CARDS - k, 0), 1);
+    el.style.opacity = o < 1 ? o.toFixed(3) : '';
+  }
+
+  // Шаг пружины для всех карточек, которые ещё не дошли до своей ступени
+  let lastFrame = 0;
+  function frame(now) {
+    const dt = Math.min((now - (lastFrame || now)) / 1000, 0.05);
+    lastFrame = now;
+    const w = SINK_OMEGA;
+    for (const el of [...pile.children]) {
+      const target = el._depth || 0;
+      let x = el._dv || 0, v = el._vv || 0;
+      if (Math.abs(target - x) < 1e-3 && Math.abs(v) < 1e-3) continue;
+      // полунеявный Эйлер для x'' = w²(target − x) − 2w·x'
+      v += (w * w * (target - x) - 2 * w * v) * dt;
+      x += v * dt;
+      el._dv = x; el._vv = v;
+      if (x >= MAX_CARDS) { el.remove(); continue; } // уже полностью под кучей
+      applyDepth(el);
+    }
+    requestAnimationFrame(frame);
   }
 
   function drop() {
@@ -138,17 +162,10 @@
       );
     }
 
-    // все, кто ниже, опускаются на ступень; вышедшие за предел — удаляются,
-    // когда уже спрятаны под кучей
+    // все, кто ниже, опускаются на ступень — дальше их ведёт пружина в frame()
     const cards = pile.children;
     for (let i = cards.length - 2, k = 1; i >= 0; i--, k++) {
-      const c = cards[i];
-      c._depth = k;
-      applyDepth(c);
-      if (k >= MAX_CARDS && !c._leaving) {
-        c._leaving = true;
-        setTimeout(() => c.remove(), SINK_MS);
-      }
+      cards[i]._depth = Math.min(k, MAX_CARDS + 1);
     }
     lastDrop = performance.now();
   }
@@ -179,4 +196,5 @@
   measure();
   drop();
   schedule();
+  requestAnimationFrame(frame);
 })();
