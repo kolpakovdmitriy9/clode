@@ -1,0 +1,294 @@
+:root {
+  --bg: #111112;
+  --S: 100vh;              /* масштабная единица: высота кадра референса (474px) */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  user-select: none;
+}
+
+/* Центр кучи */
+.pile {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 0;
+  height: 0;
+}
+
+.card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hint {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 24px;
+  margin: 0;
+  text-align: center;
+  font: 500 12px/1.3 "Space Grotesk", system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+/* ---------- Оформление карточек (плейсхолдеры: CSS-графика) ---------- */
+
+.art { position: absolute; inset: 0; }
+
+/* Бумажный постер с лампой */
+.lamp {
+  background: #e9e7e1;
+  color: #161616;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+.lamp .head {
+  position: absolute;
+  left: 6%; right: 6%; top: 4.5%;
+  display: flex;
+  justify-content: space-between;
+  font-size: calc(var(--S) * 0.012);
+  font-weight: 700;
+  padding-bottom: 3%;
+  border-bottom: 1px solid #161616;
+}
+.lamp .bulb {
+  position: absolute;
+  left: 50%; top: 22%;
+  width: 34%; height: 40%;
+  transform: translateX(-50%);
+  border-radius: 48% 48% 44% 44% / 58% 58% 42% 42%;
+  background:
+    repeating-linear-gradient(180deg, rgba(120, 90, 40, 0.12) 0 6%, transparent 6% 12%),
+    radial-gradient(60% 60% at 45% 40%, #fbf1cf, #e0cc93);
+}
+.lamp .legs {
+  position: absolute;
+  left: 50%; top: 62%;
+  width: 24%; height: 14%;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(100deg, transparent 47%, #444 47% 50%, transparent 50%),
+    linear-gradient(80deg, transparent 50%, #444 50% 53%, transparent 53%);
+}
+.lamp .title {
+  position: absolute;
+  left: 6%; bottom: 4%;
+  font-size: calc(var(--S) * 0.048);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* Постер конференции с градиентным свечением */
+.glow {
+  background:
+    radial-gradient(38% 30% at 55% 58%, #ff9ab8 0%, #ff5f8f 25%, rgba(70, 70, 255, 0.7) 55%, rgba(20, 22, 60, 0) 80%),
+    #141633;
+  color: #ff8fb0;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 500;
+}
+.glow .t {
+  position: absolute;
+  left: 7%; top: 6%;
+  font-size: calc(var(--S) * 0.03);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.glow .f {
+  position: absolute;
+  left: 7%; bottom: 6%;
+  font-size: calc(var(--S) * 0.009);
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+/* Голубая плашка-логотип */
+.mono {
+  background: #b9e0f7;
+  color: #0d0d0d;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4%;
+}
+.mono b {
+  font-size: calc(var(--S) * 0.075);
+  letter-spacing: -0.07em;
+  line-height: 0.8;
+  text-shadow: 0 -0.12em 0 #7f9fb5;
+}
+.mono small {
+  font-size: calc(var(--S) * 0.009);
+  font-weight: 500;
+}
+
+/* Тёплое «фото» с фигурой */
+.sit {
+  background:
+    radial-gradient(9% 9% at 46% 30%, #1d130d 0 96%, transparent 100%),
+    radial-gradient(22% 28% at 50% 58%, #2a1b12 0 96%, transparent 100%),
+    radial-gradient(40% 10% at 50% 86%, rgba(60, 45, 20, 0.35), transparent),
+    linear-gradient(180deg, #d2c49c, #bfae7f);
+}
+
+/* Тёмно-зелёный постер с кремовой надписью */
+.night {
+  background: #243726;
+  color: #f2dc9c;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+}
+.night .doodle {
+  position: absolute;
+  left: 30%; top: 16%;
+  width: 36%; height: 20%;
+  border: 1.5px solid rgba(242, 220, 156, 0.7);
+  border-radius: 60% 40% 55% 45%;
+  transform: rotate(-14deg);
+}
+.night .w {
+  position: absolute;
+  left: 50%; top: 58%;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  font-size: calc(var(--S) * 0.07);
+  line-height: 0.82;
+  letter-spacing: -0.03em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Кремовая карточка с текстом */
+.note {
+  background: #f1ece0;
+  color: #2b2118;
+  font-family: "EB Garamond", Georgia, serif;
+  font-weight: 500;
+  padding: 9% 9%;
+  font-size: calc(var(--S) * 0.025);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+/* Красная карточка с синим кругом и фигурой */
+.red {
+  background: #f03b25;
+}
+.red::before {
+  content: "";
+  position: absolute;
+  left: 12%; top: 8%;
+  width: 76%; height: 84%;
+  border-radius: 50%;
+  background: #3f8fc9;
+}
+.red::after {
+  content: "";
+  position: absolute;
+  left: 30%; top: 22%;
+  width: 40%; height: 78%;
+  border-radius: 45% 45% 10% 10%;
+  background:
+    radial-gradient(36% 22% at 50% 22%, #f6d9cc 0 96%, transparent 100%),
+    radial-gradient(60% 28% at 50% 12%, #1c1c1c 0 96%, transparent 100%),
+    linear-gradient(180deg, transparent 0 40%, #a7a236 40%);
+}
+
+/* Миска на циновке */
+.bowl {
+  background:
+    radial-gradient(34% 26% at 52% 58%, #3a1d12 0 90%, transparent 93%),
+    radial-gradient(34% 22% at 52% 45%, #1b1b1d 0 90%, transparent 93%),
+    radial-gradient(8% 7% at 38% 48%, #f2b91d 0 90%, transparent 100%),
+    radial-gradient(8% 7% at 66% 50%, #f2b91d 0 90%, transparent 100%),
+    repeating-linear-gradient(35deg, #b88a55 0 2%, #a3743f 2% 4%);
+}
+
+/* Чёрная пластинка */
+.side {
+  background: #0e0e0e;
+  color: #f4f4f4;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.side::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 78%; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+.side b {
+  position: relative;
+  font-size: calc(var(--S) * 0.05);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  text-align: center;
+}
+
+/* Оранжевая подушка с жёлтой наклейкой */
+.cushion {
+  background:
+    radial-gradient(70% 50% at 50% 70%, #ff7a3d, #e5541f);
+}
+.cushion::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 44%;
+  background: #f4f3ef;
+}
+.cushion .tag {
+  position: absolute;
+  left: 34%; top: 30%;
+  width: 36%; height: 40%;
+  background: #f5e42b;
+  transform: rotate(-12deg);
+  display: grid;
+  place-items: center;
+  font: 700 calc(var(--S) * 0.03) / 0.9 "Space Grotesk", system-ui, sans-serif;
+  letter-spacing: -0.05em;
+  color: #111;
+  text-align: center;
+}
+
+/* Хлебная фактура */
+.crumb {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 230, 190, 0.5) 0 4%, transparent 5%),
+    radial-gradient(circle at 70% 60%, rgba(255, 230, 190, 0.45) 0 5%, transparent 6%),
+    radial-gradient(circle at 45% 80%, rgba(90, 40, 10, 0.4) 0 4%, transparent 5%),
+    linear-gradient(160deg, #c9864a, #8e4b22);
+}
+
+/* Горы */
+.hills {
+  background:
+    linear-gradient(160deg, transparent 0 55%, #5d6d78 55%) bottom / 100% 60% no-repeat,
+    linear-gradient(20deg, transparent 0 50%, #7e8f99 50%) bottom / 100% 70% no-repeat,
+    linear-gradient(180deg, #c9d6de, #e8ecee);
+}
